@@ -1,0 +1,6 @@
+# Python
+*.pyc
+
+# Test & Development
+venv/
+settings_local.py

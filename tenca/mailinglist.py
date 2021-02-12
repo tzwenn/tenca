@@ -1,4 +1,4 @@
-from . import settings
+from . import exceptions, settings
 
 import base64
 import hashlib
@@ -14,18 +14,36 @@ class MailingList(object):
 		self.list = list
 
 	def add_member_silently(self, email):
-		"""Subscribe an email address to a mailing list, with no verification send"""
-		self.list.subscribe(email, pre_verified=True, pre_confirmed=True)
+		"""Subscribe an email address to a mailing list, with no verification or notification send"""
+		self.list.subscribe(email, pre_verified=True, pre_confirmed=True, send_welcome_message=False)
 
 	def add_member(self, email):
 		pass
 
+	def promote_to_owner(self, email):
+		# Throws ValueError if user not member of mailinglist
+		member = self.list.get_member(email)
+		self.list.add_owner(member.address)
+
+	def demote_from_owner(self, email):
+		owners = self.list.owners
+		if not self.list.is_owner(email):
+			raise ValueError('{} is not an owner address of {}'.format(email, self.list.fqdn_listname))
+		# FIXME: No lock here. Potential race condition
+		if len(self.list.owners) == 1:
+			raise exceptions.LastOwnerException('Cannot remove last owner')
+		self.list.remove_owner(email)
+
 	def hashid(self):
 		"""Returns a unique hash, that can be used to identify this list"""
-		# FIXME: Include something, that prevents clashes with legacy eemaill ids
+		# FIXME: eemaill uses random ids. Make sure, we don't clash
 		hashobj = hashlib.sha256()
 		hashobj.update(settings.LIST_HASHID_SALT + '$' + self.list.list_id)
 		return base64.encode(hashobj.hexdigest)
 
 	def remove_member(self, email):
+		"""Remove member with all roles. Fails if last owner"""
+		if self.list.is_owner(email):
+			self.demote_from_owner(email)
+		# FIXME: Is not silent
 		self.list.unsubscribe(email)

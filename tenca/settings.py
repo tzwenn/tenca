@@ -24,7 +24,11 @@ LIST_DEFAULT_SETTINGS = {
 # If not None, this will override the listname-owner@lists.example.com
 DEFAULT_OWNER_ADDRESS = None
 
+# Invite links are a hash of each mailing list name. This is the salt
 LIST_HASHID_SALT = "ChangeMe"
+
+# Use this domain for the tests in __main__.py
+TEST_DOMAIN = 'example.com'
 
 try:
 	from settings_local import *

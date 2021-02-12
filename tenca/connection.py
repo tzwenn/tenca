@@ -40,5 +40,9 @@ class Connection(object):
 	def add_list(self, name, creator_email):
 		new_list = self.domain.create_list(name)
 		self._configure_list(new_list)
-		new_list.add_owner(creator_email)
-		return MailingList(self, new_list)
+
+		wrapped_list = MailingList(self, new_list)
+		wrapped_list.add_member_silently(creator_email)
+		wrapped_list.promote_to_owner(creator_email)
+
+		return wrapped_list

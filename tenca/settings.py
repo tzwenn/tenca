@@ -27,8 +27,11 @@ DEFAULT_OWNER_ADDRESS = None
 # Invite links are a hash of each mailing list name. This is the salt
 LIST_HASHID_SALT = "ChangeMe"
 
-# Use this domain for the tests in __main__.py
+# Use this domain for tests in __main__.py or the unittests
 TEST_DOMAIN = 'example.com'
+
+# A running tenca.templateserver for delivering footers/etc to mailman
+TEMPLATE_SERVER_ADDRESS = 'http://localhost:8080'
 
 try:
 	from settings_local import *

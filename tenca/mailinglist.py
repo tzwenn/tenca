@@ -1,9 +1,10 @@
-from . import exceptions, settings
+from . import exceptions, pipelines, settings, templates
 
 import base64
 import hashlib
 
 import mailmanclient
+
 
 class MailingList(object):
 
@@ -13,12 +14,27 @@ class MailingList(object):
 		self.conn = connection
 		self.list = list
 
+	def __repr__(self):
+		return "<{} '{}'>".format(type(self).__name__, str(self.fqdn_listname))
+
 	def add_member_silently(self, email):
 		"""Subscribe an email address to a mailing list, with no verification or notification send"""
 		self.list.subscribe(email, pre_verified=True, pre_confirmed=True, send_welcome_message=False)
 
 	def add_member(self, email):
 		pass
+
+	def configure_list(self):
+		new_list = self.list
+		new_list.settings.update(settings.LIST_DEFAULT_SETTINGS)
+		new_list.settings['subject_prefix'] = '[{}] '.format(new_list.settings['list_name'].lower())
+		if settings.DEFAULT_OWNER_ADDRESS is not None:
+			new_list.settings['owner_address'] = settings.DEFAULT_OWNER_ADDRESS
+		new_list.settings['description'] = self.hashid
+		new_list.set_template('list:member:regular:footer', templates.http_substitute_url(
+			'mail_footer', invite_link=pipelines.get_func(settings.BUILD_INVITE_LINK)(self)
+		))
+		new_list.settings.save()
 
 	def promote_to_owner(self, email):
 		# Throws ValueError if user not member of mailinglist
@@ -34,16 +50,28 @@ class MailingList(object):
 			raise exceptions.LastOwnerException('Cannot remove last owner')
 		self.list.remove_owner(email)
 
-	def hashid(self):
-		"""Returns a unique hash, that can be used to identify this list"""
-		# FIXME: eemaill uses random ids. Make sure, we don't clash
-		hashobj = hashlib.sha256()
-		hashobj.update(settings.LIST_HASHID_SALT + '$' + self.list.list_id)
-		return base64.encode(hashobj.hexdigest)
-
 	def remove_member(self, email):
 		"""Remove member with all roles. Fails if last owner"""
 		if self.list.is_owner(email):
 			self.demote_from_owner(email)
 		# FIXME: Is not silent
 		self.list.unsubscribe(email)
+
+	@property
+	def fqdn_listname(self):
+		return self.list.fqdn_listname
+
+	@property
+	def list_id(self):
+		return self.list.list_id
+
+	@property
+	def hashid(self):
+		"""Returns a unique hash, that can be used to identify this list"""
+		# FIXME: eemaill uses random ids. Make sure, we don't clash
+		BAD_B64_CHARS = '+/='
+
+		hashobj = hashlib.sha256()
+		hashobj.update((settings.LIST_HASHID_SALT + '$' + self.list_id).encode('ascii'))
+		b64 = base64.b64encode(hashobj.digest()).decode('ascii')
+		return b64.translate({ord(c): None for c in BAD_B64_CHARS})

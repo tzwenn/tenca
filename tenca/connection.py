@@ -21,13 +21,6 @@ class Connection(object):
 	def BASE_URL(cls):
 		return "{}://{}:{}/{}/".format(settings.API_SCHEME, settings.API_HOST, settings.API_PORT, settings.API_VERSION)
 
-	def _configure_list(self, new_list):
-		new_list.settings.update(settings.LIST_DEFAULT_SETTINGS)
-		new_list.settings['subject_prefix'] = '[{}] '.format(new_list.settings['list_name'].lower())
-		if settings.DEFAULT_OWNER_ADDRESS is not None:
-			new_list.settings['owner_address'] = DEFAULT_OWNER_ADDRESS
-		new_list.settings.save()
-
 	def fqdn_ize(self, listname):
 		if '@' in listname:
 			return listname
@@ -39,10 +32,14 @@ class Connection(object):
 
 	def add_list(self, name, creator_email):
 		new_list = self.domain.create_list(name)
-		self._configure_list(new_list)
-
 		wrapped_list = MailingList(self, new_list)
+
+		wrapped_list.configure_list()
 		wrapped_list.add_member_silently(creator_email)
 		wrapped_list.promote_to_owner(creator_email)
 
 		return wrapped_list
+
+	def find_lists(self, address, role=None):
+		# FIXME: This might be paginated
+		return [MailingList(self, list) for list in self.client.find_lists(address, role)]

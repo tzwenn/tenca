@@ -7,7 +7,7 @@
 API_HOST = 'localhost'
 API_PORT = 9001
 
-API_VERSION = 3.0
+API_VERSION = 3.1
 API_SCHEME = 'http'
 
 # In case you have equivalent domains in your emails,
@@ -32,6 +32,9 @@ TEST_DOMAIN = 'example.com'
 
 # A running tenca.templateserver for delivering footers/etc to mailman
 TEMPLATE_SERVER_ADDRESS = 'http://localhost:8080'
+
+# The name of a python function called to create invite links for MailingList objects
+BUILD_INVITE_LINK = 'tenca.pipeline.build_invite_link'
 
 try:
 	from settings_local import *

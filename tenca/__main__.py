@@ -16,4 +16,3 @@ except urllib.error.HTTPError:
 
 testlist = conn.add_list(testlist_name, creator_name)
 testlist.add_member_silently(p2_name)
-#testlist.remove_member_silently(p2_name)

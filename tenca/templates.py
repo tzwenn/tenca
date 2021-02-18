@@ -29,6 +29,18 @@ $invite_link
 
 Have fun!""")
 
+rejected_message = string.Template( # $$reasons is substituted by mailman
+r"""Dear user,
+
+we are sorry to tell you, that your *mail* could *not* be *delivered*,
+for the following reasons:
+
+	$$reasons
+
+Best regards!
+
+$web_ui
+""")
 
 ################################################################################
 

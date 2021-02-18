@@ -15,6 +15,8 @@ class MailingList(object):
 	# In case of conflicting entries, settings wins.
 	SHARED_LIST_DEFAULT_SETTINGS = {
 		'advertised': False,
+		'default_member_action': 'accept',
+		'default_nonmember_action': 'accept'
 		# Disabled for mailman < 3.3.3
 		# 'send_goodbye_message': False,
 	}
@@ -70,6 +72,10 @@ class MailingList(object):
 			'creation_message',
 			fqdn_listname=self.fqdn_listname,
 			invite_link=pipelines.call_func(settings.BUILD_INVITE_LINK, self)
+		))
+		new_list.set_template('list:user:notice:rejected', templates.http_substitute_url(
+			'rejected_message',
+			web_ui='{}://{}'.format(settings.WEB_UI_SCHEME, settings.WEB_UI_HOSTNAME)
 		))
 		new_list.settings.save()
 
@@ -133,13 +139,30 @@ class MailingList(object):
 		return self._patched_unsubscribe(email, pre_confirmed=pre_confirmed)
 
 	def inject_message(self, sender_address, subject, message):
-		raw_text = """From: {}
-		To: {}
-		Subject: {}
-
-		{}""".format(sender_address, self.fqdn_listname, subject, message)
+		raw_text = ("From: {}\n"
+		"To: {}\n"
+		"Subject: {}\n"
+		"\n"
+		"{}").format(sender_address, self.fqdn_listname, subject, message)
 		in_queue = self.conn.client.queues['in']
 		in_queue.inject(self.list_id, raw_text)
+
+	############################################################################
+	## Options
+
+	@property
+	def notsubscribed_allowed_to_post(self):
+		return self.list.settings['default_nonmember_action'] != 'accept'
+
+	@notsubscribed_allowed_to_post.setter
+	def notsubscribed_allowed_to_post(self, is_allowed):
+		if is_allowed:
+			self.list.settings['default_nonmember_action'] = 'accept'
+		else:
+			self.list.settings['default_nonmember_action'] = settings.DISABLED_NON_MEMBER_ACTION
+		self.list.settings.save()
+
+	############################################################################
 
 	@property
 	def fqdn_listname(self):

@@ -36,7 +36,19 @@ class MailingList(object):
 			new_list.settings['owner_address'] = settings.DEFAULT_OWNER_ADDRESS
 		new_list.settings['description'] = self.hashid
 		new_list.set_template('list:member:regular:footer', templates.http_substitute_url(
-			'mail_footer', invite_link=pipelines.get_func(settings.BUILD_INVITE_LINK)(self)
+			'mail_footer', invite_link=pipelines.call_func(settings.BUILD_INVITE_LINK, self)
+		))
+		new_list.set_template('list:user:action:subscribe', templates.http_substitute_url(
+			'confirmation_message',
+			action_name='subscription',
+			fqdn_listname=self.fqdn_listname,
+			action_link=pipelines.call_func(settings.BUILD_ACTION_LINK, self, '$token'),
+			action_abuse_link=pipelines.call_func(settings.BUILD_ACTION_ABUSE_LINK, self, '$token')
+		))
+		new_list.set_template('list:user:notice:welcome', templates.http_substitute_url(
+			'creation_message',
+			fqdn_listname=self.fqdn_listname,
+			invite_link=pipelines.call_func(settings.BUILD_INVITE_LINK, self)
 		))
 		new_list.settings.save()
 

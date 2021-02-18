@@ -7,4 +7,4 @@ class NoMemberException(TencaException):
 class LastOwnerException(TencaException):
 	
 	def __init__(self, email):
-		super().__init__('User <{}> is the last owner. Cannot remove.')
+		super().__init__('User <{}> is the last owner. Cannot remove.'.format(email))

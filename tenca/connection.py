@@ -1,5 +1,7 @@
-from . import settings
+from . import exceptions, settings
 from .mailinglist import MailingList
+
+import urllib.error
 
 import mailmanclient
 
@@ -13,7 +15,7 @@ class Connection(object):
 		assert len(domains), 1
 		self.domain = domains[0]
 
-	def __str__(self):
+	def __repr__(self):
 		return '<{} on {} for {}>'.format(type(self).__name__, self.BASE_URL, str(self.domain))
 
 	@classmethod
@@ -43,3 +45,11 @@ class Connection(object):
 	def find_lists(self, address, role=None):
 		# FIXME: This might be paginated
 		return [MailingList(self, list) for list in self.client.find_lists(address, role)]
+
+	def verify_address(self, address):
+		try:
+			addr = self.client.get_address(address)
+		except urllib.error.HTTPError:
+			raise exceptions.NoMemberException
+		else:
+			addr.verify()

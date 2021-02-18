@@ -22,7 +22,11 @@ class MailingList(object):
 		self.list.subscribe(email, pre_verified=True, pre_confirmed=True, send_welcome_message=False)
 
 	def add_member(self, email):
-		pass
+		"""Subscribes a user and sends them a confirmation mail
+
+		Returns the authentication token for that subscription.
+		"""
+		return self.list.subscribe(email)["token"]
 
 	def configure_list(self):
 		new_list = self.list
@@ -36,6 +40,12 @@ class MailingList(object):
 		))
 		new_list.settings.save()
 
+	def pending_subscriptions(self):
+		return {r['token']: r['email'] for r in self.list.get_requests(token_owner='subscriber')}
+
+	def confirm_subscription(self, token):
+		self.list.accept_request(token)
+
 	def promote_to_owner(self, email):
 		# Throws ValueError if user not member of mailinglist
 		member = self.list.get_member(email)
@@ -47,7 +57,7 @@ class MailingList(object):
 			raise ValueError('{} is not an owner address of {}'.format(email, self.list.fqdn_listname))
 		# FIXME: No lock here. Potential race condition
 		if len(self.list.owners) == 1:
-			raise exceptions.LastOwnerException('Cannot remove last owner')
+			raise exceptions.LastOwnerException(email)
 		self.list.remove_owner(email)
 
 	def remove_member(self, email):

@@ -18,6 +18,9 @@ class Connection(object):
 	def __repr__(self):
 		return '<{} on {} for {}>'.format(type(self).__name__, self.BASE_URL, str(self.domain))
 
+	def _wrap_list(self, list):
+		return MailingList(self, list)
+
 	@classmethod
 	@property
 	def BASE_URL(cls):
@@ -30,11 +33,11 @@ class Connection(object):
 			return '{}@{}'.format(listname, str(self.domain))
 
 	def get_list(self, fqdn_listname):
-		return MailingList(self, self.client.get_list(fqdn_listname))
+		return self._wrap_list(self.client.get_list(fqdn_listname))
 
 	def add_list(self, name, creator_email):
 		new_list = self.domain.create_list(name)
-		wrapped_list = MailingList(self, new_list)
+		wrapped_list = self._wrap_list(new_list)
 
 		wrapped_list.configure_list()
 		wrapped_list.add_member_silently(creator_email)
@@ -44,7 +47,7 @@ class Connection(object):
 
 	def find_lists(self, address, role=None):
 		# FIXME: This might be paginated
-		return [MailingList(self, list) for list in self.client.find_lists(address, role)]
+		return [self._wrap_list(list) for list in self.client.find_lists(address, role)]
 
 	def verify_address(self, address):
 		try:

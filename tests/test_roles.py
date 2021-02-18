@@ -18,7 +18,7 @@ class TestRoles(ListTest):
 		self.testSilentAddition()
 		self.testlist.remove_member(self.p2_name)
 		self.assertMembers([self.creator_name, self.p3_name])
-		with self.assertRaises(ValueError):
+		with self.assertRaises(exceptions.NoMemberException):
 			self.testlist.remove_member(self.nh_name)
 		with self.assertRaises(exceptions.LastOwnerException):
 			self.testlist.remove_member(self.creator_name)
@@ -33,6 +33,8 @@ class TestRoles(ListTest):
 		self.testPromotionAndDemotion()
 		self.testlist.remove_member(self.creator_name)
 		self.assertMembers([self.p2_name], "owners")
+		with self.assertRaises(exceptions.NoMemberException):
+			self.testlist.demote_from_owner(self.p3_name)
 
 if __name__ == '__main__':
 	unittest.main()

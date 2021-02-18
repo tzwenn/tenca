@@ -17,6 +17,9 @@ class MailingList(object):
 	def __repr__(self):
 		return "<{} '{}'>".format(type(self).__name__, str(self.fqdn_listname))
 
+	def _raise_nomember(self, email):
+		raise exceptions.NoMemberException('{} is not a member address of {}'.format(email, self.fqdn_listname))
+
 	def add_member_silently(self, email):
 		"""Subscribe an email address to a mailing list, with no verification or notification send"""
 		self.list.subscribe(email, pre_verified=True, pre_confirmed=True, send_welcome_message=False)
@@ -59,14 +62,16 @@ class MailingList(object):
 		self.list.accept_request(token)
 
 	def promote_to_owner(self, email):
-		# Throws ValueError if user not member of mailinglist
-		member = self.list.get_member(email)
+		try:
+			member = self.list.get_member(email)
+		except ValueError:
+			self._raise_nomember(email)
 		self.list.add_owner(member.address)
 
 	def demote_from_owner(self, email):
 		owners = self.list.owners
 		if not self.list.is_owner(email):
-			raise ValueError('{} is not an owner address of {}'.format(email, self.list.fqdn_listname))
+			raise exceptions.NoMemberException('{} is not an owner address of {}'.format(email, self.fqdn_listname))
 		# FIXME: No lock here. Potential race condition
 		if len(self.list.owners) == 1:
 			raise exceptions.LastOwnerException(email)
@@ -77,7 +82,10 @@ class MailingList(object):
 		if self.list.is_owner(email):
 			self.demote_from_owner(email)
 		# FIXME: Is not silent
-		self.list.unsubscribe(email)
+		try:
+			self.list.unsubscribe(email)
+		except ValueError:
+			self._raise_nomember(email)
 
 	@property
 	def fqdn_listname(self):

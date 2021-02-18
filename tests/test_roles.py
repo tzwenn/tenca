@@ -16,12 +16,12 @@ class TestRoles(ListTest):
 
 	def testRemoval(self):
 		self.testSilentAddition()
-		self.testlist.remove_member(self.p2_name)
+		self.testlist.remove_member_silently(self.p2_name)
 		self.assertMembers([self.creator_name, self.p3_name])
 		with self.assertRaises(exceptions.NoMemberException):
-			self.testlist.remove_member(self.nh_name)
+			self.testlist.remove_member_silently(self.nh_name)
 		with self.assertRaises(exceptions.LastOwnerException):
-			self.testlist.remove_member(self.creator_name)
+			self.testlist.remove_member_silently(self.creator_name)
 
 	def testPromotionAndDemotion(self):
 		self.testSilentAddition()
@@ -31,7 +31,7 @@ class TestRoles(ListTest):
 
 	def testDemotion(self):
 		self.testPromotionAndDemotion()
-		self.testlist.remove_member(self.creator_name)
+		self.testlist.remove_member_silently(self.creator_name)
 		self.assertMembers([self.p2_name], "owners")
 		with self.assertRaises(exceptions.NoMemberException):
 			self.testlist.demote_from_owner(self.p3_name)

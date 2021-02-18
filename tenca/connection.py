@@ -26,6 +26,9 @@ class Connection(object):
 	def BASE_URL(cls):
 		return "{}://{}:{}/{}/".format(settings.API_SCHEME, settings.API_HOST, settings.API_PORT, settings.API_VERSION)
 
+	def rest_call(self, path, data=None, method=None):
+		return self.client._connection.call(path, data, method)
+
 	def fqdn_ize(self, listname):
 		if '@' in listname:
 			return listname

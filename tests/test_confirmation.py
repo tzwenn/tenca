@@ -14,3 +14,10 @@ class TestConfirmation(ListTest):
 		self.assertMembers([self.creator_name])
 		self.testlist.confirm_subscription(token)
 		self.assertMembers([self.creator_name, self.p2_name])
+
+	def testNonSilentRemoval(self):
+		self.testlist.add_member_silently(self.p2_name)
+		token = self.testlist.remove_member(self.p2_name)
+		self.assertMembers([self.creator_name, self.p2_name])
+		self.testlist.confirm_subscription(token)
+		self.assertMembers([self.creator_name])

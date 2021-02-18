@@ -12,7 +12,7 @@ API_SCHEME = 'http'
 
 # Used to update the default settings for new mailing lists
 LIST_DEFAULT_SETTINGS = {
-	'advertised': False
+	# 'key': value
 }
 
 # If not None, this will override the listname-owner@lists.example.com

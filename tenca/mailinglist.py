@@ -10,6 +10,12 @@ class MailingList(object):
 
 	"""A decorator for mailmanclient.restobjects.mailinglist.MailingList"""
 
+	# Can be extended by settings.LIST_DEFAULT_SETTINGS
+	# In case of conflicting entries, settings wins.
+	SHARED_LIST_DEFAULT_SETTINGS = {
+		'advertised': False
+	}
+
 	def __init__(self, connection, list):
 		self.conn = connection
 		self.list = list
@@ -24,15 +30,16 @@ class MailingList(object):
 		"""Subscribe an email address to a mailing list, with no verification or notification send"""
 		self.list.subscribe(email, pre_verified=True, pre_confirmed=True, send_welcome_message=False)
 
-	def add_member(self, email):
+	def add_member(self, email, send_welcome_message=False):
 		"""Subscribes a user and sends them a confirmation mail
 
 		Returns the authentication token for that subscription.
 		"""
-		return self.list.subscribe(email)["token"]
+		return self.list.subscribe(email, send_welcome_message=send_welcome_message)["token"]
 
 	def configure_list(self):
 		new_list = self.list
+		new_list.settings.update(self.SHARED_LIST_DEFAULT_SETTINGS)
 		new_list.settings.update(settings.LIST_DEFAULT_SETTINGS)
 		new_list.settings['subject_prefix'] = '[{}] '.format(new_list.settings['list_name'].lower())
 		if settings.DEFAULT_OWNER_ADDRESS is not None:
@@ -86,6 +93,15 @@ class MailingList(object):
 			self.list.unsubscribe(email)
 		except ValueError:
 			self._raise_nomember(email)
+
+	def inject_message(self, sender_address, subject, message):
+		raw_text = """From: {}
+		To: {}
+		Subject: {}
+
+		{}""".format(sender_address, self.fqdn_listname, subject, message)
+		in_queue = self.conn.client.queues['in']
+		in_queue.inject(self.list_id, raw_text)
 
 	@property
 	def fqdn_listname(self):

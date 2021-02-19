@@ -38,6 +38,26 @@ class Connection(object):
 	def get_list(self, fqdn_listname):
 		return self._wrap_list(self.client.get_list(fqdn_listname))
 
+	def get_list_by_hashid(self, hashid):
+		"""Lookup a MailingList by hashid (VERY SLOW!)
+
+		To date, a primary design goal of Tenca is to keep
+		all model state only within mailman's backend.
+
+		hashid breaks this, as it is computed from backend and local
+		information, but required by the web interface to uniquely
+		identify a mailing list.
+		Thus, to find a list we iterate OVER THE ENTIRE	MODEL.
+
+		It is STRONLY ADVISED to cache a hashid-to-list_id mapping
+		elsewhere to limit calls to this function and check afterwards
+		if that list still exists.
+		"""
+		for list in map(self._wrap_list, self.client.lists):
+			if list.hashid == hashid:
+				return list
+		return None
+
 	def add_list(self, name, creator_email):
 		new_list = self.domain.create_list(name)
 		wrapped_list = self._wrap_list(new_list)

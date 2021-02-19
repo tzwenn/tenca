@@ -25,8 +25,11 @@ class TestRoles(ListTest):
 
 	def testPromotionAndDemotion(self):
 		self.testSilentAddition()
+		self.assertFalse(self.testlist.is_owner(self.p2_name))
 		self.assertMembers([self.creator_name], "owners")
 		self.testlist.promote_to_owner(self.p2_name)
+
+		self.assertTrue(self.testlist.is_owner(self.p2_name))
 		self.assertMembers([self.creator_name, self.p2_name], "owners")
 
 	def testDemotion(self):

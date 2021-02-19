@@ -2,6 +2,7 @@ from . import exceptions, pipelines, settings, templates
 
 import base64
 import hashlib
+import urllib.parse
 import urllib.error
 
 import mailmanclient
@@ -71,7 +72,22 @@ class MailingList(object):
 			))
 		self.list.settings.save()
 
-	def pending_subscriptions(self):
+	def pending_subscriptions(self, request_type='subscription'):
+		"""As of mailman<3.3.3 no unsubscriptions are delivered via REST.
+		In case you updated core (but use an older version of mailmanclient),
+		the following might do:
+
+		path = 'lists/{}/requests'.format(self.fqdn_listname)
+		get_params = {
+			'token_owner': 'subscriber',
+			'request_type': request_type
+		}
+		response, answer = self.conn.rest_call('{}?{}'.format(path, urllib.parse.urlencode(get_params), None, 'GET'))
+		if 'entries' not in answer:
+			return {}
+		else:
+			return {r['token']: r['email'] for r in answer['entries']}
+		"""
 		return {r['token']: r['email'] for r in self.list.get_requests(token_owner='subscriber')}
 
 	def confirm_subscription(self, token):

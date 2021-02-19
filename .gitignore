@@ -4,3 +4,6 @@
 # Test & Development
 venv/
 settings_local.py
+
+# Subproject, not yet committed
+webui/

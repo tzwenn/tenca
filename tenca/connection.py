@@ -52,7 +52,7 @@ class Connection(object):
 		# FIXME: This might be paginated
 		return [self._wrap_list(list) for list in self.client.find_lists(address, role)]
 
-	def verify_address(self, address):
+	def mark_address_verified(self, address):
 		try:
 			addr = self.client.get_address(address)
 		except urllib.error.HTTPError:

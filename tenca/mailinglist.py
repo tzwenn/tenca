@@ -21,9 +21,25 @@ class MailingList(object):
 		# 'send_goodbye_message': False,
 	}
 
+	# Maps Mailman Template names to Tenca Template Names
+	TEMPLATE_MAPPINGS = {
+		'list:member:regular:footer': 'mail_footer',
+		'list:user:action:subscribe': 'subscription_message',
+		'list:user:action:unsubscribe': 'unsubscription_message',
+		'list:user:notice:welcome': 'creation_message',
+		'list:user:notice:rejected': 'rejected_message',
+	}
+
 	def __init__(self, connection, list):
 		self.conn = connection
 		self.list = list
+		self.template_args = dict(
+			fqdn_listname=self.fqdn_listname,
+			action_link=pipelines.call_func(settings.BUILD_ACTION_LINK, self, '$token'),
+			action_abuse_link=pipelines.call_func(settings.BUILD_ACTION_ABUSE_LINK, self, '$token'),
+			invite_link=pipelines.call_func(settings.BUILD_INVITE_LINK, self),
+			web_ui='{}://{}'.format(settings.WEB_UI_SCHEME, settings.WEB_UI_HOSTNAME)
+		)
 
 	def __repr__(self):
 		return "<{} '{}'>".format(type(self).__name__, str(self.fqdn_listname))
@@ -43,41 +59,17 @@ class MailingList(object):
 		return self.list.subscribe(email, send_welcome_message=send_welcome_message)["token"]
 
 	def configure_list(self):
-		new_list = self.list
-		new_list.settings.update(self.SHARED_LIST_DEFAULT_SETTINGS)
-		new_list.settings.update(settings.LIST_DEFAULT_SETTINGS)
-		new_list.settings['subject_prefix'] = '[{}] '.format(new_list.settings['list_name'].lower())
+		self.list.settings.update(self.SHARED_LIST_DEFAULT_SETTINGS)
+		self.list.settings.update(settings.LIST_DEFAULT_SETTINGS)
+		self.list.settings['subject_prefix'] = '[{}] '.format(self.list.settings['list_name'].lower())
 		if settings.DEFAULT_OWNER_ADDRESS is not None:
-			new_list.settings['owner_address'] = settings.DEFAULT_OWNER_ADDRESS
-		new_list.settings['description'] = self.hashid
-		new_list.set_template('list:member:regular:footer', templates.http_substitute_url(
-			'mail_footer', invite_link=pipelines.call_func(settings.BUILD_INVITE_LINK, self)
-		))
-		confirmation_args = dict(
-			fqdn_listname=self.fqdn_listname,
-			action_link=pipelines.call_func(settings.BUILD_ACTION_LINK, self, '$token'),
-			action_abuse_link=pipelines.call_func(settings.BUILD_ACTION_ABUSE_LINK, self, '$token')
-		)
-		new_list.set_template('list:user:action:subscribe', templates.http_substitute_url(
-			'confirmation_message',
-			action_name='subscription',
-			**confirmation_args
-		))
-		new_list.set_template('list:user:action:unsubscribe', templates.http_substitute_url(
-			'confirmation_message',
-			action_name='unsubscription',
-			**confirmation_args
-		))
-		new_list.set_template('list:user:notice:welcome', templates.http_substitute_url(
-			'creation_message',
-			fqdn_listname=self.fqdn_listname,
-			invite_link=pipelines.call_func(settings.BUILD_INVITE_LINK, self)
-		))
-		new_list.set_template('list:user:notice:rejected', templates.http_substitute_url(
-			'rejected_message',
-			web_ui='{}://{}'.format(settings.WEB_UI_SCHEME, settings.WEB_UI_HOSTNAME)
-		))
-		new_list.settings.save()
+			self.list.settings['owner_address'] = settings.DEFAULT_OWNER_ADDRESS
+		self.list.settings['description'] = self.hashid
+		for mailman_template_name, tenca_template_name in self.TEMPLATE_MAPPINGS.items():
+			self.list.set_template(mailman_template_name, templates.http_substitute_url(
+				tenca_template_name, **self.template_args
+			))
+		self.list.settings.save()
 
 	def pending_subscriptions(self):
 		return {r['token']: r['email'] for r in self.list.get_requests(token_owner='subscriber')}

@@ -15,4 +15,4 @@ except urllib.error.HTTPError:
 	pass
 
 testlist = conn.add_list(testlist_name, creator_name)
-testlist.add_member_silently(p2_name)
+# testlist.add_member_silently(p2_name)

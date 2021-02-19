@@ -1,22 +1,35 @@
 import string
 import urllib.parse
 
+## A variable $name will be substitited by Tenca,
+## a variables $$name by Mailman.
 
 mail_footer = string.Template(r"""
 _________________________________________________________________
 Share this link to invite more people or click to unsubscribe:
 $invite_link""")
 
-confirmation_message = string.Template(
+subscription_message = string.Template(
 r"""Welcome to $fqdn_listname
 
-Please confirm your *$action_name*:
+Please confirm your *subscription*:
 $action_link
 
 If you did not request this, please report abuse by visiting the following link:
 $action_abuse_link
 
 Enjoy our service!""")
+
+unsubscription_message = string.Template(
+r"""Dear user,
+
+Please confirm your *unsubscription* from $fqdn_listname:
+$action_link
+
+If you did not request this, please report abuse by visiting the following link:
+$action_abuse_link
+
+Thanks for using $web_ui! We hope to serve you again soon.""")
 
 creation_message = string.Template(
 r"""Thanks for your sign-up!
@@ -29,7 +42,7 @@ $invite_link
 
 Have fun!""")
 
-rejected_message = string.Template( # $$reasons is substituted by mailman
+rejected_message = string.Template(
 r"""Dear user,
 
 we are sorry to tell you, that your *mail* could *not* be *delivered*,

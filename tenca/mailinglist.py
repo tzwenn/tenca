@@ -90,8 +90,24 @@ class MailingList(object):
 		"""
 		return {r['token']: r['email'] for r in self.list.get_requests(token_owner='subscriber')}
 
+	def _wrap_subscription_exception(self, func, token):
+		try:
+			func()
+		except urllib.error.HTTPError as e:
+			if e.status == 404:
+				raise exceptions.NoSuchRequestException(self, token)
+			else:
+				raise e
+
 	def confirm_subscription(self, token):
-		self.list.accept_request(token)
+		self._wrap_subscription_exception(
+			lambda: self.list.accept_request(token),
+			token)
+
+	def cancel_pending_subscription(self, token):
+		self._wrap_subscription_exception(
+			lambda: self.list.moderate_request(token, 'discard'),
+			token)
 
 	def promote_to_owner(self, email):
 		try:

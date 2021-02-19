@@ -4,6 +4,11 @@ class TencaException(Exception):
 class NoMemberException(TencaException):
 	pass
 
+class NoSuchRequestException(TencaException):
+
+	def __init__(self, list, token):
+		super().__init__('No pending request {} on list <{}>.'.format(token, list.fqdn_listname))
+
 class LastOwnerException(TencaException):
 	
 	def __init__(self, email):

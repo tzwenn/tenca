@@ -35,6 +35,3 @@ class TestRoles(ListTest):
 		self.assertMembers([self.p2_name], "owners")
 		with self.assertRaises(exceptions.NoMemberException):
 			self.testlist.demote_from_owner(self.p3_name)
-
-if __name__ == '__main__':
-	unittest.main()

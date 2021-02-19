@@ -50,12 +50,17 @@ class Connection(object):
 
 	def find_lists(self, address, role=None):
 		# FIXME: This might be paginated
-		return [self._wrap_list(list) for list in self.client.find_lists(address, role)]
+		try:
+			found_lists = self.client.find_lists(address, role)
+		except urllib.error.HTTPError as e:
+			exceptions.map_http_404(e)
+			return []
+		return [self._wrap_list(list) for list in found_lists]
 
 	def mark_address_verified(self, address):
 		try:
 			addr = self.client.get_address(address)
-		except urllib.error.HTTPError:
-			raise exceptions.NoMemberException
+		except urllib.error.HTTPError as e:
+			exceptions.map_http_404(e, exceptions.NoMemberException)
 		else:
 			addr.verify()

@@ -94,10 +94,7 @@ class MailingList(object):
 		try:
 			func()
 		except urllib.error.HTTPError as e:
-			if e.status == 404:
-				raise exceptions.NoSuchRequestException(self, token)
-			else:
-				raise e
+			exceptions.map_http_404(e, exceptions.NoSuchRequestException, self, token)
 
 	def confirm_subscription(self, token):
 		self._wrap_subscription_exception(
@@ -139,11 +136,9 @@ class MailingList(object):
 			if response.status_code == 202:
 				return answer["token"]
 		except urllib.error.HTTPError as e:
-			if e.code == 404:
-				self._raise_nomember(email)
-			else:
-				raise e
-
+			exceptions.map_http_404(e)
+			self._raise_nomember(email)
+			
 	def remove_member_silently(self, email):
 		"""Remove member with all roles, no confirmation required. Fails if last owner.
 

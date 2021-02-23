@@ -22,7 +22,10 @@ DEFAULT_OWNER_ADDRESS = None
 DISABLED_NON_MEMBER_ACTION = 'reject'
 
 # Invite links are a hash of each mailing list name. This is the salt
-LIST_HASHID_SALT = "ChangeMe"
+LIST_HASH_ID_SALT = "ChangeMe"
+
+# Class to lookup hash_id->list_id mappings
+HASH_STORAGE_CLASS = "tenca.hash_storage.DictCachedDescriptionStorage"
 
 # Use this domain for tests in __main__.py or the unittests
 TEST_DOMAIN = 'example.com'

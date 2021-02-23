@@ -6,7 +6,7 @@ from . import settings
 import urllib.parse
 
 def build_invite_link(mailinglist):
-	return urllib.parse.urlunsplit([settings.WEB_UI_SCHEME, settings.WEB_UI_HOSTNAME, mailinglist.hashid, '', ''])
+	return urllib.parse.urlunsplit([settings.WEB_UI_SCHEME, settings.WEB_UI_HOSTNAME, mailinglist.hash_id, '', ''])
 
 
 def build_action_link(mailinglist, token, action='confirm'):

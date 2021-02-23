@@ -31,16 +31,10 @@ class MailingList(object):
 		'list:user:notice:rejected': 'rejected_message',
 	}
 
-	def __init__(self, connection, list):
+	def __init__(self, connection, list, hash_id):
 		self.conn = connection
 		self.list = list
-		self.template_args = dict(
-			fqdn_listname=self.fqdn_listname,
-			action_link=pipelines.call_func(settings.BUILD_ACTION_LINK, self, '$token'),
-			action_abuse_link=pipelines.call_func(settings.BUILD_ACTION_ABUSE_LINK, self, '$token'),
-			invite_link=pipelines.call_func(settings.BUILD_INVITE_LINK, self),
-			web_ui='{}://{}'.format(settings.WEB_UI_SCHEME, settings.WEB_UI_HOSTNAME)
-		)
+		self.hash_id = hash_id
 
 	def __repr__(self):
 		return "<{} '{}'>".format(type(self).__name__, str(self.fqdn_listname))
@@ -63,12 +57,18 @@ class MailingList(object):
 		self.list.settings.update(self.SHARED_LIST_DEFAULT_SETTINGS)
 		self.list.settings.update(settings.LIST_DEFAULT_SETTINGS)
 		self.list.settings['subject_prefix'] = '[{}] '.format(self.list.settings['list_name'].lower())
+		template_args = dict(
+			fqdn_listname=self.fqdn_listname,
+			action_link=pipelines.call_func(settings.BUILD_ACTION_LINK, self, '$token'),
+			action_abuse_link=pipelines.call_func(settings.BUILD_ACTION_ABUSE_LINK, self, '$token'),
+			invite_link=pipelines.call_func(settings.BUILD_INVITE_LINK, self),
+			web_ui='{}://{}'.format(settings.WEB_UI_SCHEME, settings.WEB_UI_HOSTNAME)
+		)
 		if settings.DEFAULT_OWNER_ADDRESS is not None:
 			self.list.settings['owner_address'] = settings.DEFAULT_OWNER_ADDRESS
-		self.list.settings['description'] = self.hashid
 		for mailman_template_name, tenca_template_name in self.TEMPLATE_MAPPINGS.items():
 			self.list.set_template(mailman_template_name, templates.http_substitute_url(
-				tenca_template_name, **self.template_args
+				tenca_template_name, **template_args
 			))
 		self.list.settings.save()
 
@@ -169,6 +169,38 @@ class MailingList(object):
 		in_queue = self.conn.client.queues['in']
 		in_queue.inject(self.list_id, raw_text)
 
+	def propose_hash_id(self, round=0):
+		"""Returns a hash, that can be used to identify this list
+		
+		In the unlikely case this clashes with existing ids, the round
+		parameter can be used to generate a new one.
+
+		The ids are actually predictable for a given (secret) salt.
+		This has two implications:
+			1. If that salt leaks, anyone can guess any invite link by listnames.
+			2. Re-creating a list with the same name will result in the same
+			   invite link (unless, there is a very unlike hash-collision).
+			   Helpfull, if someone accidentally deletes a list and allows
+			   for non-persistent caches.
+
+		I actually like the second aspect, but if you don't or #1 worries you
+		too much, consider the following:
+
+			import random
+			import string
+			
+			LEN = 32
+			ALPHA_NUM = string.ascii_letters + string.digits
+			return "".join(random.choice(ALPHA_NUM) for _ in range(LEN))		
+		"""
+		BAD_B64_CHARS = '+/='
+
+		components = (settings.LIST_HASH_ID_SALT, round, self.list_id)
+		hashobj = hashlib.sha256()
+		hashobj.update('$'.join(map(str, components)).encode('ascii'))
+		b64 = base64.b64encode(hashobj.digest()).decode('ascii')
+		return b64.translate({ord(c): None for c in BAD_B64_CHARS})
+
 	############################################################################
 	## Options
 
@@ -193,14 +225,3 @@ class MailingList(object):
 	@property
 	def list_id(self):
 		return self.list.list_id
-
-	@property
-	def hashid(self):
-		"""Returns a unique hash, that can be used to identify this list"""
-		# FIXME: eemaill uses random ids. Make sure, we don't clash
-		BAD_B64_CHARS = '+/='
-
-		hashobj = hashlib.sha256()
-		hashobj.update((settings.LIST_HASHID_SALT + '$' + self.list_id).encode('ascii'))
-		b64 = base64.b64encode(hashobj.digest()).decode('ascii')
-		return b64.translate({ord(c): None for c in BAD_B64_CHARS})

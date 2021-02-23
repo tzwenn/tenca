@@ -28,6 +28,8 @@ class TestFindLists(TencaTest):
 		super().setUp()
 		for listname, (owners, members) in self.test_data.items():
 			creator, owners = owners[0], owners[1:]
+			# Clear in case it existed
+			self.clear_testlist(listname)
 			newlist = self.conn.add_list(listname, self.email(creator))
 			for address in set(owners + members):
 				newlist.add_member_silently(self.email(address))

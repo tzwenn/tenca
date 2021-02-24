@@ -8,6 +8,7 @@ import mailmanclient
 class NotInStorageError(exceptions.TencaException):
 	pass
 
+
 class HashStorage(object, metaclass=ABCMeta):
 	"""Abstract base class to lookup MailingLists by a random (hash) identifier.
 
@@ -50,7 +51,7 @@ class HashStorage(object, metaclass=ABCMeta):
 
 	def __contains__(self, hash_id: str):
 		"""Check if hash_id is present in this storage"""
-		return hash_id in self.keys()
+		return hash_id in self.hashes()
 
 	@abstractmethod
 	def get_list_id(self, hash_id: str) -> str:
@@ -74,7 +75,7 @@ class HashStorage(object, metaclass=ABCMeta):
 		pass
 
 	@abstractmethod
-	def keys(self):
+	def hashes(self):
 		"""Returns an iterator over all known hashes"""
 		pass
 
@@ -108,7 +109,7 @@ class VolatileDictHashStorage(HashStorage):
 	def store_list_id(self, hash_id, list_id):
 		self._d[hash_id] = list_id
 
-	def keys(self):
+	def hashes(self):
 		return self._d.keys()
 
 
@@ -165,7 +166,7 @@ class MailmanDescriptionHashStorage(HashStorage):
 	def get_hash_id(self, list_id):
 		return self.list_hash(self._raw_conn_getlist(list_id))
 
-	def keys(self):
+	def hashes(self):
 		descriptions = (self._get_dsc(l) for l in self.conn.client.lists)
 		return (self._split_hash_id(dsc) for dsc in descriptions if self._is_hash_id(dsc))
 
@@ -175,15 +176,13 @@ class TwoLevelHashStorage(HashStorage):
 
 	The hot storage (level 1) must be a subset of the cold storage (level 2).
 	"""
+	l1_class = None
+	l2_class = None
 
-	@classmethod
-	def factory(cls, l1_class, l2_class):
-		return lambda connection: cls(connection, l1_class, l2_class)
-
-	def __init__(self, connection, class1, class2):
+	def __init__(self, connection):
 		super().__init__(connection)
-		self.l1 = class1(connection)
-		self.l2 = class2(connection)
+		self.l1 = self.l1_class(connection)
+		self.l2 = self.l1_class(connection)
 
 	def __contains__(self, hash_id):
 		return hash_id in self.l1 or hash_id in self.l2
@@ -214,12 +213,15 @@ class TwoLevelHashStorage(HashStorage):
 			self.l1.store_list_id(hash_id, list_id)
 			return hash_id
 
-	def keys(self, l2_only=False):
-		result = set(self.l2.keys())
+	def hashes(self, l2_only=False):
+		result = set(self.l2.hashes())
 		if not l2_only:
-			result.union(set(self.l1.keys()))
+			result.union(set(self.l1.hashes()))
 
 		return iter(result)
-		
 
-DictCachedDescriptionStorage = TwoLevelHashStorage.factory(VolatileDictHashStorage, MailmanDescriptionHashStorage)
+class DictCachedDescriptionStorage(TwoLevelHashStorage):
+
+	l1_class = VolatileDictHashStorage
+	l2_class = MailmanDescriptionHashStorage
+ 

@@ -27,8 +27,11 @@ LIST_HASH_ID_SALT = "ChangeMe"
 # Class to lookup hash_id->list_id mappings
 HASH_STORAGE_CLASS = "tenca.hash_storage.DictCachedDescriptionStorage"
 
-# Use this domain for tests in __main__.py or the unittests
-TEST_DOMAIN = 'example.com'
+# Emails in the unittests or __main__.py will end in this domain
+TEST_MAIL_DOMAIN = 'example.com'
+
+# List-Addresses in the unittests or __main__.py will end in this domain
+TEST_LIST_DOMAIN = 'lists.example.com'
 
 # Use this domain for default pipelines (confirmation links, etc.)
 WEB_UI_HOSTNAME = 'lists.example.com'

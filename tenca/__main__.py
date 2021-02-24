@@ -5,8 +5,8 @@ import urllib
 
 
 testlist_name = 'testlist'
-creator_name = 'thecreator@' + settings.TEST_DOMAIN
-p2_name = 'person2@' + settings.TEST_DOMAIN
+creator_name = 'thecreator@' + settings.TEST_MAIL_DOMAIN
+p2_name = 'person2@' + settings.TEST_MAIL_DOMAIN
 
 conn = Connection()
 try:

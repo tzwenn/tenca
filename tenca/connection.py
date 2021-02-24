@@ -1,5 +1,6 @@
 from . import exceptions, pipelines, settings
 from .mailinglist import MailingList
+from .hash_storage import NotInStorageError
 
 import itertools
 import urllib.error
@@ -50,23 +51,31 @@ class Connection(object):
 			return '{}@{}'.format(listname, str(self.domain))
 
 	def get_list(self, fqdn_listname):
-		return self._wrap_list(self.client.get_list(fqdn_listname))
+		try:
+			return self._wrap_list(self.client.get_list(fqdn_listname))
+		except urllib.error.HTTPError as e:
+			exceptions.map_http_404(e)
+			return None
 
 	def get_list_by_hash_id(self, hash_id):
-		return self.hash_storage.get_list(hash_id)
+		try:
+			return self.hash_storage.get_list(hash_id)
+		except NotInStorageError:
+			return None
 
 	def add_list(self, name, creator_email):
 		new_list = self.domain.create_list(name)
 
 		wrapped_list = self._wrap_list(new_list, skip_hash_id=True)
+		wrapped_list.configure_list()
+
 		proposals = (wrapped_list.propose_hash_id(round) for round in itertools.count())
 		for proposed_hash_id in proposals:
 			if proposed_hash_id not in self.hash_storage:
 				wrapped_list.hash_id = proposed_hash_id
 				self.hash_storage.store_list(proposed_hash_id, new_list)
 				break
-
-		wrapped_list.configure_list()
+		wrapped_list.configure_templates()
 
 		wrapped_list.add_member_silently(creator_email)
 		wrapped_list.promote_to_owner(creator_email)

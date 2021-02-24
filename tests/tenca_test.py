@@ -11,7 +11,7 @@ class TencaTest(unittest.TestCase):
 		return '{}@{}'.format(name, settings.TEST_MAIL_DOMAIN)
 
 	def list_id(name):
-		return '{}.{}'.format(name, settings.TEST_LISTS_DOMAIN)
+		return '{}.{}'.format(name, settings.TEST_LIST_DOMAIN)
 
 	def assertSortedListEqual(self, first, second):
 		self.assertListEqual(

@@ -47,8 +47,10 @@ class Connection(object):
 	def fqdn_ize(self, listname):
 		if '@' in listname:
 			return listname
-		else:
-			return '{}@{}'.format(listname, str(self.domain))
+		domain_str = '.' + str(self.domain)
+		if listname.endswith(domain_str):
+			listname = listname.rsplit(domain_str, 1)[0]
+		return '{}@{}'.format(listname, str(self.domain))
 
 	def get_list(self, fqdn_listname):
 		try:

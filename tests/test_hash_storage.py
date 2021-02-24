@@ -3,9 +3,6 @@ from .tenca_test import TencaTest
 from tenca.connection import Connection
 from tenca.hash_storage import *
 
-__all__ = ['VolatileDictHashStorageTest', 'MailmanDescriptionHashStorageTest', 'DictCachedDescriptionStorageTest']
-
-
 class DisabledHashStorage(HashStorage):
 	"""No storing at all. Disables hash-lookup"""
 
@@ -42,7 +39,7 @@ class HiddenFromTestRunner(object):
 
 		# Assumes stable hash_id creation
 		test_data = {
-			# listname: hash_id
+			# list_id: hash_id
 			TencaTest.list_id('list_a'): 'ALongLookingHashId1',
 			TencaTest.list_id('list_b'): 'ALongLookingHashId2',
 			TencaTest.list_id('list_c'): 'ALongLookingHashId3',
@@ -80,10 +77,10 @@ class HiddenFromTestRunner(object):
 		def testContains(self):
 			self.storeTestData()	
 			for hash_id in self.test_data.values():
-				self.assertTrue(hash_id in self.hash_storage)
+				self.assertIn(hash_id, self.hash_storage)
 
 		def testNotInStorage(self):
-			self.assertFalse('Invalid_Hash' in self.hash_storage)
+			self.assertNotIn('Invalid_Hash', self.hash_storage)
 			with self.assertRaises(NotInStorageError):
 				self.hash_storage.get_list_id('Invalid_Hash')
 			with self.assertRaises(NotInStorageError):
@@ -108,7 +105,8 @@ class MailmanDescriptionHashStorageTest(HiddenFromTestRunner.HashStorageTest):
 		# MailmanDescriptionHashStorage requires lists to be
 		# present in the Mailman backend
 		for list_id in self.test_data:
-			self.conn.domain.create_list(list_id)
+			shortname = list_id.split('.', 1)[0]
+			self.conn.domain.create_list(shortname)
 
 	def assertIsSubset(self, sub, super):
 		self.assertTrue(

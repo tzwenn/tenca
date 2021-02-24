@@ -8,7 +8,10 @@ from tenca.connection import Connection
 class TencaTest(unittest.TestCase):
 
 	def email(name):
-		return '{}@{}'.format(name, settings.TEST_DOMAIN)
+		return '{}@{}'.format(name, settings.TEST_MAIL_DOMAIN)
+
+	def list_id(name):
+		return '{}.{}'.format(name, settings.TEST_LISTS_DOMAIN)
 
 	def assertSortedListEqual(self, first, second):
 		self.assertListEqual(

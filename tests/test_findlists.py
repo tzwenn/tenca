@@ -1,4 +1,4 @@
-from .tencatest import TencaTest
+from .tenca_test import TencaTest
 
 class TestFindLists(TencaTest):
 

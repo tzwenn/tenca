@@ -1,4 +1,4 @@
-from .listtest import ListTest
+from .list_test import ListTest
 
 from tenca import exceptions
 

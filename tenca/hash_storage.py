@@ -27,7 +27,7 @@ class HashStorage(object, metaclass=ABCMeta):
 			return self.conn.client.get_list(list_id)
 		except urllib.error.HTTPError as e:
 			exceptions.map_http_404(e) # raise below
-		raise NotInStorageError()
+		raise NotInStorageError(list_id)
 
 	def get_list(self, hash_id: str) -> mailmanclient.MailingList:
 		"""Returns a mailmanclient.MailingList object for hash_id
@@ -36,9 +36,6 @@ class HashStorage(object, metaclass=ABCMeta):
 		to receive a properly wrapped tenca.MailingList object.
 		"""
 		list_id = self.get_list_id(hash_id)
-		if list_id is None:
-			raise NotInStorageError()
-
 		return self._raw_conn_getlist(list_id)
 	
 	def store_list(self, hash_id: str, list: mailmanclient.MailingList):
@@ -59,12 +56,12 @@ class HashStorage(object, metaclass=ABCMeta):
 		
 		Raises `NotInStorageError`, if no such list exists
 		"""
-		pass
+		pass # pragma: no cover
 
 	@abstractmethod
 	def store_list_id(self, hash_id: str, list_id: str):
 		"""Stores list_id by hash_id."""
-		pass
+		pass # pragma: no cover
 
 	@abstractmethod 
 	def get_hash_id(self, list_id: str) -> str:
@@ -72,7 +69,7 @@ class HashStorage(object, metaclass=ABCMeta):
 		
 		Raises `NotInStorageError`, if no such list exists.
 		"""
-		pass
+		pass # pragma: no cover
 
 	@abstractmethod
 	def delete_hash_id(self, hash_id: str):
@@ -83,12 +80,12 @@ class HashStorage(object, metaclass=ABCMeta):
 
 		If the hash_id is unknown, this function silently returns.
 		"""
-		pass
+		pass # pragma: no cover
 
 	@abstractmethod
 	def hashes(self):
 		"""Returns an iterator over all known hashes"""
-		pass
+		pass # pragma: no cover
 
 
 class VolatileDictHashStorage(HashStorage):
@@ -109,13 +106,13 @@ class VolatileDictHashStorage(HashStorage):
 		try:
 			return self._d[hash_id]
 		except KeyError:
-			raise NotInStorageError()
+			raise NotInStorageError(hash_id)
 
 	def get_hash_id(self, list_id):
 		try:
 			return next(hash_id for hash_id, lid in self._d.items() if lid == list_id)
 		except StopIteration:
-			raise NotInStorageError()
+			raise NotInStorageError(list_id)
 
 	def store_list_id(self, hash_id, list_id):
 		self._d[hash_id] = list_id
@@ -156,7 +153,7 @@ class MailmanDescriptionHashStorage(HashStorage):
 			dsc = self._get_dsc(list)
 			if self._is_hash_id(dsc) and self._split_hash_id(dsc) == hash_id:
 				return list
-		raise NotInStorageError()
+		raise NotInStorageError(hash_id)
 
 	def store_list(self, hash_id, list):
 		self._set_dsc(list, self.PREFIX + hash_id)
@@ -175,7 +172,7 @@ class MailmanDescriptionHashStorage(HashStorage):
 			self.store_list(hash_id,
 				self._raw_conn_getlist(list_id))
 		except NotInStorageError:
-			pass
+			return
 
 	def get_hash_id(self, list_id):
 		return self.list_hash(self._raw_conn_getlist(list_id))
@@ -204,7 +201,7 @@ class TwoLevelHashStorage(HashStorage):
 	def __init__(self, connection):
 		super().__init__(connection)
 		self.l1 = self.l1_class(connection)
-		self.l2 = self.l1_class(connection)
+		self.l2 = self.l2_class(connection)
 
 	def __contains__(self, hash_id):
 		return hash_id in self.l1 or hash_id in self.l2
@@ -214,9 +211,8 @@ class TwoLevelHashStorage(HashStorage):
 			return self.l1.get_list_id(hash_id)
 		except NotInStorageError:
 			list_id = self.l2.get_list_id(hash_id)
-			self.l1.store_list_id(list_id)
+			self.l1.store_list_id(hash_id, list_id)
 			return list_id
-		raise NotInStorageError
 
 	def store_list_id(self, hash_id, list_id):
 		"""Stores list_id by hash_id in both storages.

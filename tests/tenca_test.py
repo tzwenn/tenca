@@ -1,7 +1,5 @@
 import unittest
 
-import urllib.error
-
 from tenca import settings, exceptions
 from tenca.connection import Connection
 
@@ -24,3 +22,4 @@ class TencaTest(unittest.TestCase):
 
 	def clear_testlist(self, listname, *args, **kwargs):
 		self.conn.delete_list(listname, *args, **kwargs)
+ 

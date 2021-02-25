@@ -27,6 +27,9 @@ class DisabledHashStorage(HashStorage):
 	def get_hash_id(self, list_id):
 		raise NotInStorageError
 
+	def delete_hash_id(self, hash_id):
+		pass
+
 	def hashes(self):
 		return iter([])
 
@@ -87,6 +90,13 @@ class HiddenFromTestRunner(object):
 				self.hash_storage.get_list('Invalid_Hash')
 			with self.assertRaises(NotInStorageError):
 				self.hash_storage.get_hash_id('Invalid_ListName')
+
+		def testHashDeletion(self):
+			self.storeTestData()
+			list_a_hash = self.hash_storage.get_hash_id(TencaTest.list_id('list_a'))
+
+			self.hash_storage.delete_hash_id(list_a_hash)
+			self.assertNotIn(list_a_hash, self.hash_storage)
 
 		def tearDown(self):
 			for listname in self.test_data:

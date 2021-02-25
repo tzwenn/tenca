@@ -75,6 +75,17 @@ class HashStorage(object, metaclass=ABCMeta):
 		pass
 
 	@abstractmethod
+	def delete_hash_id(self, hash_id: str):
+		"""Deletes the entry of `hash_id`.
+
+		Will be called either when the list is deleted,
+		or when an invalid/outdated entry is encountered.
+
+		If the hash_id is unknown, this function silently returns.
+		"""
+		pass
+
+	@abstractmethod
 	def hashes(self):
 		"""Returns an iterator over all known hashes"""
 		pass
@@ -108,6 +119,9 @@ class VolatileDictHashStorage(HashStorage):
 
 	def store_list_id(self, hash_id, list_id):
 		self._d[hash_id] = list_id
+
+	def delete_hash_id(self, hash_id):
+		self._d.pop(hash_id, None)
 
 	def hashes(self):
 		return self._d.keys()
@@ -166,6 +180,14 @@ class MailmanDescriptionHashStorage(HashStorage):
 	def get_hash_id(self, list_id):
 		return self.list_hash(self._raw_conn_getlist(list_id))
 
+	def delete_hash_id(self, hash_id):
+		try:
+			l = self.get_list(hash_id)
+		except NotInStorageError:
+			return
+		else:
+			self._set_dsc(l, '')
+
 	def hashes(self):
 		descriptions = (self._get_dsc(l) for l in self.conn.client.lists)
 		return (self._split_hash_id(dsc) for dsc in descriptions if self._is_hash_id(dsc))
@@ -212,6 +234,10 @@ class TwoLevelHashStorage(HashStorage):
 			hash_id = self.l2.get_hash_id(list_id)
 			self.l1.store_list_id(hash_id, list_id)
 			return hash_id
+
+	def delete_hash_id(self, hash_id):
+		self.l2.delete_hash_id(hash_id)
+		self.l1.delete_hash_id(hash_id)
 
 	def hashes(self, l2_only=False):
 		result = set(self.l2.hashes())

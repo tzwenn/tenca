@@ -33,7 +33,10 @@ class Connection(object):
 		return '<{} on {} for {}>'.format(type(self).__name__, self.BASE_URL, str(self.domain))
 
 	def _wrap_list(self, list, skip_hash_id=False):
-		hash_id = None if skip_hash_id else self.hash_storage.list_hash(list) 
+		try:
+			hash_id = None if skip_hash_id else self.hash_storage.list_hash(list)
+		except NotInStorageError:
+			hash_id = None
 		return MailingList(self, list, hash_id)
 
 	@classmethod
@@ -63,6 +66,7 @@ class Connection(object):
 		try:
 			return self.hash_storage.get_list(hash_id)
 		except NotInStorageError:
+			# TODO: Discard hash if in storage? What's the fastest way?
 			return None
 
 	def add_list(self, name, creator_email):
@@ -83,6 +87,22 @@ class Connection(object):
 		wrapped_list.promote_to_owner(creator_email)
 
 		return wrapped_list
+
+	def delete_list(self, listname, silent_fail=True, retain_hash=False):
+		if not retain_hash:
+			l = self.get_list(self.fqdn_ize(listname))
+			if l is None:
+				if silent_fail:
+					return
+				raise exceptions.TencaException("No such list")
+			fqdn = l.fqdn_listname
+			self.hash_storage.delete_hash_id(l.hash_id)
+		else:
+			fqdn = self.fqdn_ize(listname)
+		try:
+			self.client.delete_list(fqdn)
+		except urllib.error.HTTPError as e:
+			exceptions.map_http_404(e, None if silent_fail else exceptions.TencaException)
 
 	def find_lists(self, address, role=None):
 		# FIXME: This might be paginated

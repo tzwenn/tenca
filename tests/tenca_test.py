@@ -22,8 +22,5 @@ class TencaTest(unittest.TestCase):
 	def setUp(self):
 		self.conn = Connection()
 
-	def clear_testlist(self, listname):
-		try:
-			self.conn.client.delete_list(self.conn.fqdn_ize(listname))
-		except urllib.error.HTTPError as e:
-			exceptions.map_http_404(e)
+	def clear_testlist(self, listname, *args, **kwargs):
+		self.conn.delete_list(listname, *args, **kwargs)

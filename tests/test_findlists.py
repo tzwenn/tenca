@@ -1,3 +1,5 @@
+from tenca import exceptions
+
 from .tenca_test import TencaTest
 
 class TestFindLists(TencaTest):
@@ -51,6 +53,24 @@ class TestFindLists(TencaTest):
 			['list_a', 'list_b'])
 		self.assertFindLists('thecreator', 'member',
 			self.test_data.keys())
+
+	def testListDeletion(self):
+		self.clear_testlist('list_a')
+		self.assertFindLists('thecreator', 'owner',
+			['list_b']
+		)
+		self.assertFindLists('thecreator', 'member',
+			['list_b', 'list_c']
+		)
+
+	def testNonExistentListDeletion(self):
+		self.clear_testlist('does_not_exists')
+		self.clear_testlist('does_not_exists', silent_fail=True, retain_hash=True)
+
+		with self.assertRaises(exceptions.TencaException):
+			self.clear_testlist('does_not_exists', silent_fail=False, retain_hash=True)
+		with self.assertRaises(exceptions.TencaException):
+			self.clear_testlist('does_not_exists', silent_fail=False, retain_hash=False)
 
 	def tearDown(self):
 		super().tearDown()

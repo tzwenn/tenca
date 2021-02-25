@@ -1,11 +1,12 @@
 from ..templates import templates_dict
 
+from abc import ABCMeta, abstractmethod
 import http
 import string
 import urllib.parse
 
 
-class WebApp(object):
+class WebApp(object, metaclass=ABCMeta):
 
 	"""Callable WSGI-compatible object, without external dependencies.
 	Can be served with wsgiref/flup/gunicorn.
@@ -26,13 +27,12 @@ class WebApp(object):
 		start_response(response, [('Content-Type', self.CONTENT_TYPE)])
 		return self._content
 
-	def write(self, text="", newLine=True):
-		if newLine:
-			text += '\n'
+	def write(self):
 		self._content.append(text.encode('utf-8'))
 
+	@abstractmethod
 	def run(self, path, params):
-		raise NotImplemented
+		pass # pragma: no cover
 
 
 class TemplateServerApp(WebApp):

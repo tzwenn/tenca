@@ -2,8 +2,10 @@
 *.pyc
 
 # Test & Development
-venv/
+.coverage
+htmlcov/
 settings_local.py
+venv/
 
 # Subproject, not yet committed
 webui/

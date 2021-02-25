@@ -53,5 +53,5 @@ BUILD_ACTION_ABUSE_LINK = 'tenca.pipelines.build_action_abuse_link'
 
 try:
 	from settings_local import *
-except ImportError:
+except ImportError: # pragma: no cover
 	pass

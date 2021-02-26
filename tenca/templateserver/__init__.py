@@ -27,7 +27,7 @@ class WebApp(object, metaclass=ABCMeta):
 		start_response(response, [('Content-Type', self.CONTENT_TYPE)])
 		return self._content
 
-	def write(self):
+	def write(self, text):
 		self._content.append(text.encode('utf-8'))
 
 	@abstractmethod

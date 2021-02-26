@@ -8,9 +8,13 @@ class TestRoles(ListTest):
 	nh_name = ListTest.email('not_here')
 
 	def testSilentAddition(self):
+		self.assertFalse(self.testlist.is_member(self.p2_name))
+		self.assertFalse(self.testlist.is_member(self.p3_name))
 		self.testlist.add_member_silently(self.p2_name)
 		self.testlist.add_member_silently(self.p3_name)
 		self.assertMembers([self.creator_name, self.p2_name, self.p3_name])
+		self.assertTrue(self.testlist.is_member(self.p2_name))
+		self.assertTrue(self.testlist.is_member(self.p3_name))
 
 	def testRemoval(self):
 		self.testSilentAddition()

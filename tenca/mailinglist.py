@@ -116,6 +116,9 @@ class MailingList(object):
 	def is_owner(self, email):
 		return self.list.is_owner(email)
 
+	def is_member(self, email):
+		return self.list.is_member(email)
+
 	def demote_from_owner(self, email):
 		owners = self.list.owners
 		if not self.list.is_owner(email):

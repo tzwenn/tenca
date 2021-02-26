@@ -32,11 +32,12 @@ class Connection(object):
 	def __repr__(self):
 		return '<{} on {} for {}>'.format(type(self).__name__, self.BASE_URL, str(self.domain))
 
-	def _wrap_list(self, list, skip_hash_id=False):
-		try:
-			hash_id = None if skip_hash_id else self.hash_storage.list_hash(list)
-		except NotInStorageError:
-			hash_id = None
+	def _wrap_list(self, list, skip_hash_id=False, hash_id=None):
+		if hash_id is None:
+			try:
+				hash_id = None if skip_hash_id else self.hash_storage.list_hash(list)
+			except NotInStorageError:
+				hash_id = None
 		return MailingList(self, list, hash_id)
 
 	@classmethod
@@ -64,7 +65,7 @@ class Connection(object):
 
 	def get_list_by_hash_id(self, hash_id):
 		try:
-			return self.hash_storage.get_list(hash_id)
+			return self._wrap_list(self.hash_storage.get_list(hash_id), hash_id=hash_id)
 		except NotInStorageError:
 			# TODO: Discard hash if in storage? What's the fastest way?
 			return None

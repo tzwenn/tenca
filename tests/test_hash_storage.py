@@ -109,7 +109,8 @@ class HiddenFromTestRunner(object):
 				self.conn.hash_storage = self.hash_storage
 				received_l = self.conn.get_list_by_hash_id(test_hash_id)
 				self.assertEqual(test_list_id, received_l.list_id)
-				self.assertEqual(test_hash_id, self.hash_storage.list_hash(received_l))
+				self.assertEqual(test_hash_id, received_l.hash_id)
+				self.assertEqual(test_hash_id, self.hash_storage.list_hash(received_l.list))
 
 				self.assertIsNone(
 					self.conn.get_list_by_hash_id('Invalid_Hash')

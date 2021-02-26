@@ -53,6 +53,21 @@ class MailingList(object):
 		"""
 		return self.list.subscribe(email, send_welcome_message=send_welcome_message)["token"]
 
+	def toggle_membership(self, email):
+		"""Adds member if not present and removes if already member.
+		
+		This is useful from interfaces where you don't want to hint attackers
+		the current membership status of others.
+
+		Returns a tuple of (status, token), where token is True if the user was newly
+		added and False if it was removed.
+		"""
+		if self.is_member(email):
+			return False, self.remove_member(email)
+		else:
+			return True, self.add_member(email)
+
+
 	def configure_list(self):
 		self.list.settings.update(self.SHARED_LIST_DEFAULT_SETTINGS)
 		self.list.settings.update(settings.LIST_DEFAULT_SETTINGS)

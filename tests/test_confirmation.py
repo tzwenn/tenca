@@ -26,6 +26,18 @@ class TestConfirmation(ListTest):
 			{}
 		)
 
+	def testToggleMembership(self):
+		status, token = self.testlist.toggle_membership(self.p2_name)
+		self.assertTrue(status)
+		self.testlist.confirm_subscription(token)
+		self.assertMembers([self.creator_name, self.p2_name])
+
+		status, token = self.testlist.toggle_membership(self.p2_name)
+		self.assertFalse(status)
+		self.testlist.confirm_subscription(token)
+		self.assertMembers([self.creator_name])
+
+
 	def testCancelPendingAddition(self):
 		token = self.testlist.add_member(self.p2_name)
 		self.testlist.cancel_pending_subscription(token)

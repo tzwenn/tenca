@@ -178,6 +178,18 @@ class MailingList(object):
 			self.demote_from_owner(email)
 		return self._patched_unsubscribe(email, pre_confirmed=pre_confirmed)
 
+	def get_owners_and_members(self, owners_first=True):
+		memberships = {
+			str(m.address): False for m in self.list.members
+		}
+		memberships.update({
+			str(m.address): True for m in self.list.owners
+		})
+		if owners_first:
+			return sorted(memberships.items(), key=lambda t: (not t[1], t[0])) # False < True
+		else:
+			return sorted(memberships.items())
+
 	def inject_message(self, sender_address, subject, message):
 		raw_text = ("From: {}\n"
 		"To: {}\n"

@@ -180,10 +180,10 @@ class MailingList(object):
 
 	def get_owners_and_members(self, owners_first=True):
 		memberships = {
-			str(m.address): False for m in self.list.members
+			m.email: False for m in self.list.members
 		}
 		memberships.update({
-			str(m.address): True for m in self.list.owners
+			m.email: True for m in self.list.owners
 		})
 		if owners_first:
 			return sorted(memberships.items(), key=lambda t: (not t[1], t[0])) # False < True
@@ -236,7 +236,7 @@ class MailingList(object):
 
 	@property
 	def notsubscribed_allowed_to_post(self):
-		return self.list.settings['default_nonmember_action'] != 'accept'
+		return self.list.settings['default_nonmember_action'] == 'accept'
 
 	@notsubscribed_allowed_to_post.setter
 	def notsubscribed_allowed_to_post(self, is_allowed):
@@ -245,6 +245,8 @@ class MailingList(object):
 		else:
 			self.list.settings['default_nonmember_action'] = settings.DISABLED_NON_MEMBER_ACTION
 		self.list.settings.save()
+
+	replies_addressed_to_list = False
 
 	############################################################################
 

@@ -190,10 +190,14 @@ class MailingList(object):
 		else:
 			return sorted(memberships.items())
 
-	def inject_message(self, sender_address, subject, message):
+	def inject_message(self, sender_address, subject, message, other_headers=None):
+		other_headers = other_headers or {}
+		other_headers_str = "\n".join(["%s: %s" % (k.capitalize(), str(v)) for k, v in other_headers.items()])
+		if other_headers_str:
+			other_headers_str += '\n'
 		raw_text = ("From: {}\n"
 		"To: {}\n"
-		"Subject: {}\n"
+		"Subject: {}\n" + other_headers_str +
 		"\n"
 		"{}").format(sender_address, self.fqdn_listname, subject, message)
 		in_queue = self.conn.client.queues['in']
@@ -246,7 +250,23 @@ class MailingList(object):
 			self.list.settings['default_nonmember_action'] = settings.DISABLED_NON_MEMBER_ACTION
 		self.list.settings.save()
 
-	replies_addressed_to_list = False
+	@property
+	def replies_addressed_to_list(self):
+		return self.list.settings['reply_goes_to_list'] != 'no_munging'
+
+	@replies_addressed_to_list.setter
+	def replies_addressed_to_list(self, is_setting_reply_to):
+		# Note: eemaill does not apply this setting if the sender already
+		# sends a 'REPLY-TO'. But we take the Mailman approach and add both
+		if is_setting_reply_to:
+			# Note: I would like to use 'point_to_list', but this uses the
+			# description as readable name, leaking MailmanDescriptionHashStorage data
+			# This works, but is not nice.
+			self.list.settings['reply_to_address'] = self.fqdn_listname
+			self.list.settings['reply_goes_to_list'] = 'explicit_header'
+		else:
+			self.list.settings['reply_goes_to_list'] = 'no_munging'
+		self.list.settings.save()
 
 	############################################################################
 

@@ -105,13 +105,17 @@ class Connection(object):
 		except urllib.error.HTTPError as e:
 			exceptions.map_http_404(e, None if silent_fail else exceptions.TencaException)
 
-	def _raw_find_lists(self, address, role=None):
-		# FIXME: This might be paginated
+	def _raw_find_lists(self, address, role):
+		data = {'subscriber': address, 'role': role}
 		try:
-			return self.client.find_lists(address, role)
+			response, content = self.rest_call('lists/find', data)
+			if 'entries' not in content:
+				return []
 		except urllib.error.HTTPError as e:
 			exceptions.map_http_404(e)
 			return []
+		else:
+			return [entry['list_id'] for entry in content['entries']]
 
 	def find_lists(self, address, role=None):
 		return [self._wrap_list(list) for list in self._raw_find_lists(role)]
@@ -123,16 +127,14 @@ class Connection(object):
 
 		The resulted is sorted alphabetically, with the owned lists first.
 		"""
-		# I discovered the Ids of the REST objects to be stable,
-		# but do rather not rely on this finding.
 		memberships = {
-			list.list_id: (list, False) for list in self._raw_find_lists(address, 'member')
+			list_id: False for list_id in self._raw_find_lists(address, 'member')
 		}
 		memberships.update({
-			list.list_id: (list, True) for list in self._raw_find_lists(address, 'owner')
+			list_id: True for list_id in self._raw_find_lists(address, 'owner')
 		})
-		sorted_mo_ships = sorted(memberships.items(), key=lambda t: (not t[1][1], t[0])) # False < True
-		return [(self._wrap_list(list), is_owner) for _list_id, (list, is_owner) in sorted_mo_ships]
+		sorted_mo_ships = sorted(memberships.items(), key=lambda t: (not t[1], t[0])) # False < True
+		return [(list_id, self.hash_storage.get_hash_id(list_id), is_owner) for (list_id, is_owner) in sorted_mo_ships]
 
 	def mark_address_verified(self, address):
 		try:

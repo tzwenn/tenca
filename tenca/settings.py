@@ -18,8 +18,11 @@ LIST_DEFAULT_SETTINGS = {
 # If not None, this will override the listname-owner@lists.example.com
 DEFAULT_OWNER_ADDRESS = None
 
-# What happens to messages when non-member post while this is not enabled? ('discard'/'reject')
+# What happens to messages when non-members post while this is not enabled? ('discard'/'reject')
 DISABLED_NON_MEMBER_ACTION = 'reject'
+
+# What happens to messages when moderated/blocked members post? ('discard'/'reject')
+BLOCKED_MEMBER_ACTION = 'reject'
 
 # Invite links are a hash of each mailing list name. This is the salt
 LIST_HASH_ID_SALT = "ChangeMe"

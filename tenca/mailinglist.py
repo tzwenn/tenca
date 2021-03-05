@@ -42,6 +42,14 @@ class MailingList(object):
 	def _raise_nomember(self, email):
 		raise exceptions.NoMemberException('{} is not a member address of {}'.format(email, self.fqdn_listname))
 
+	def _raw_get_member(self, email):
+		try:
+			member = self.list.get_member(email)
+		except ValueError:
+			self._raise_nomember(email)
+		else:
+			return member
+
 	def add_member_silently(self, email):
 		"""Subscribe an email address to a mailing list, with no verification or notification send"""
 		self.list.subscribe(email, pre_verified=True, pre_confirmed=True, send_welcome_message=False)
@@ -122,10 +130,7 @@ class MailingList(object):
 			token)
 
 	def promote_to_owner(self, email):
-		try:
-			member = self.list.get_member(email)
-		except ValueError:
-			self._raise_nomember(email)
+		member = self._raw_get_member(email)
 		self.list.add_owner(member.address)
 
 	def is_owner(self, email):
@@ -143,6 +148,15 @@ class MailingList(object):
 			raise exceptions.LastOwnerException(email)
 		self.list.remove_owner(email)
 
+	def is_blocked(self, email):
+		member = self._raw_get_member(email)
+		return member.moderation_action not in [None, '', 'accept']
+
+	def set_blocked(self, email, is_blocked):
+		member = self._raw_get_member(email)
+		member.moderation_action = settings.BLOCKED_MEMBER_ACTION if is_blocked else ''
+		member.save()
+	
 	def _patched_unsubscribe(self, email, **kwargs):
 		# As of mailmanclient=3.3.2, no confirmation for REST-based unsubscribe is send
 		# Here, we manually issue a REST call.

@@ -148,9 +148,12 @@ class MailingList(object):
 			raise exceptions.LastOwnerException(email)
 		self.list.remove_owner(email)
 
+	def _is_a_blocked_action(self, moderation_action):
+		return moderation_action not in [None, '', 'accept']
+
 	def is_blocked(self, email):
 		member = self._raw_get_member(email)
-		return member.moderation_action not in [None, '', 'accept']
+		return self._is_a_blocked_action(member.moderation_action)
 
 	def set_blocked(self, email, is_blocked):
 		member = self._raw_get_member(email)
@@ -191,15 +194,27 @@ class MailingList(object):
 			self.demote_from_owner(email)
 		return self._patched_unsubscribe(email, pre_confirmed=pre_confirmed)
 
-	def get_owners_and_members(self, owners_first=True):
+
+	def _raw_get_roster(self, roster):
+		path = 'lists/{}/roster/{}'.format(self.list_id, roster)
+		try:
+			response, answer = self.conn.rest_call(path, method='GET')
+			return answer.get('entries', [])
+		except urllib.error.HTTPError as e:
+			exceptions.map_http_404(e)
+			return []
+
+	def get_roster(self, owners_first=True):
 		memberships = {
-			m.email: False for m in self.list.members
+			e['email']: (False, self._is_a_blocked_action(e.get('moderation_action'))) for e in self._raw_get_roster('member')
 		}
 		memberships.update({
-			m.email: True for m in self.list.owners
+			# We cannot trust the 'moderation_action' field of owners.
+			# But the member-status is evaluated when receiving an email from this address.
+			email: (True, memberships[email][1]) for email in (e['email'] for e in self._raw_get_roster('owner'))
 		})
 		if owners_first:
-			return sorted(memberships.items(), key=lambda t: (not t[1], t[0])) # False < True
+			return sorted(memberships.items(), key=lambda t: (not t[1][0], t[0])) # False < True
 		else:
 			return sorted(memberships.items())
 

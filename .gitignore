@@ -9,3 +9,7 @@ venv/
 
 # Subproject, not yet committed
 webui/
+
+# Setuptools
+dist/
+*.egg-info/

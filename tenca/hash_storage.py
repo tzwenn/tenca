@@ -242,6 +242,30 @@ class TwoLevelHashStorage(HashStorage):
 
 		return iter(result)
 
+class BackedHashStorage(TwoLevelHashStorage):
+	"""A Hash Storage that *completely* reads a second
+	storage on start-up to prevent later read-accesses.
+
+	Read accesses are only answered from the first one,
+	write acceses also passed through to the second.
+	"""
+
+	def __init__(self, connection):
+		super().__init__(connection)
+		for hash_id in self.l2.hashes:
+			list_id = self.l2.get_list_id(hash_id)
+			self.l1.store_list_id(hash_id, list_id)
+
+	def __contains__(self, hash_id):
+		return hash_id in self.l1
+
+	def get_hash_id(self, list):
+		return self.l1.get_hash_id(list_id)
+
+	def hashes(self):
+		return self.l1.hashes()
+
+
 class DictCachedDescriptionStorage(TwoLevelHashStorage):
 
 	l1_class = VolatileDictHashStorage

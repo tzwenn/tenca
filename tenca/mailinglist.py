@@ -17,9 +17,9 @@ class MailingList(object):
 	SHARED_LIST_DEFAULT_SETTINGS = {
 		'advertised': False,
 		'default_member_action': 'accept',
-		'default_nonmember_action': 'accept'
-		# Disabled for mailman < 3.3.3
-		# 'send_goodbye_message': False,
+		'default_nonmember_action': 'accept',
+		# Note: Option not present for mailman < 3.3.3
+		'send_goodbye_message': False,
 	}
 
 	# Maps Mailman Template names to Tenca Template Names
@@ -173,7 +173,6 @@ class MailingList(object):
 		is not exposed using the REST API. Thus, this function is never silent and
 		will always send a final notification when a member is successfully removed.
 		"""
-
 		if self.list.is_owner(email):
 			self.demote_from_owner(email)
 		return self._patched_unsubscribe(email, pre_confirmed=pre_confirmed)

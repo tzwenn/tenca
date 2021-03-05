@@ -4,7 +4,7 @@
 # Test & Development
 .coverage
 htmlcov/
-settings_local.py
+local_tenca_settings.py
 venv/
 
 # Subproject, not yet committed

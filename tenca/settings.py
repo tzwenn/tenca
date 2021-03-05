@@ -1,4 +1,4 @@
-## Define these settings in your settings_local.py
+## Define these settings in your local_tenca_settings.py.py
 # ADMIN_USER =
 # ADMIN_PASS =
 
@@ -55,6 +55,8 @@ BUILD_ACTION_LINK = 'tenca.pipelines.build_action_link'
 BUILD_ACTION_ABUSE_LINK = 'tenca.pipelines.build_action_abuse_link'
 
 try:
-	from settings_local import *
+	from local_tenca_settings import *
 except ImportError: # pragma: no cover
-	pass
+	import sys
+	sys.stderr.write('Could not import your "local_tenca_settings.py" file.\n')
+	sys.stderr.write('Try setting your PYTHONPATH accordingly.\n')

@@ -42,8 +42,13 @@ class TestRoles(ListTest):
 			self.testlist.demote_from_owner(self.p3_name)
 
 	def testBlocking(self):
+		self.testlist.add_member_silently(self.p2_name)
 		self.assertFalse(self.testlist.is_blocked(self.p2_name))
 		self.testlist.set_blocked(self.p2_name, True)
 		self.assertTrue(self.testlist.is_blocked(self.p2_name))
 		self.testlist.set_blocked(self.p2_name, False)
 		self.assertFalse(self.testlist.is_blocked(self.p2_name))
+
+	def testBlockingFailsOnNonmember(self):
+		with self.assertRaises(exceptions.NoMemberException):
+			self.testlist.set_blocked(self.nh_name, True)

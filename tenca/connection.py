@@ -70,24 +70,36 @@ class Connection(object):
 			# TODO: Discard hash if in storage? What's the fastest way?
 			return None
 
-	def add_list(self, name, creator_email):
+	def _create_list(self, name, creator_email, hash_id):
 		new_list = self.domain.create_list(name)
 
 		wrapped_list = self._wrap_list(new_list, skip_hash_id=True)
 		wrapped_list.configure_list()
 
-		proposals = (wrapped_list.propose_hash_id(round) for round in itertools.count())
-		for proposed_hash_id in proposals:
-			if proposed_hash_id not in self.hash_storage:
-				wrapped_list.hash_id = proposed_hash_id
-				self.hash_storage.store_list(proposed_hash_id, new_list)
-				break
+		if hash_id is None:
+			proposals = (wrapped_list.propose_hash_id(round) for round in itertools.count())
+			for proposed_hash_id in proposals:
+				if proposed_hash_id not in self.hash_storage:
+					hash_id = proposed_hash_id
+					break
+
+		wrapped_list.hash_id = hash_id
+		self.hash_storage.store_list(hash_id, new_list)
 		wrapped_list.configure_templates()
 
-		wrapped_list.add_member_silently(creator_email)
-		wrapped_list.promote_to_owner(creator_email)
+		if creator_email is not None:
+			wrapped_list.add_member_silently(creator_email)
+			wrapped_list.promote_to_owner(creator_email)
 
 		return wrapped_list
+
+	def import_eemaill(self, name, hash_id):
+		"""Adds a list and directly assigns an hash_id (good for imports)"""
+		return self._create_list(name, creator_email=None, hash_id=hash_id)
+
+	def add_list(self, name, creator_email):
+		"""Adds a list and sets the first member and creator as owner"""
+		return self._create_list(name, creator_email, hash_id=None)
 
 	def delete_list(self, listname, silent_fail=True, retain_hash=False):
 		if not retain_hash:
@@ -117,8 +129,13 @@ class Connection(object):
 		else:
 			return [entry['list_id'] for entry in content['entries']]
 
-	def find_lists(self, address, role=None):
-		return [self._wrap_list(list) for list in self._raw_find_lists(role)]
+	def find_lists(self, address, role=None, count=50, page=1):
+		"""Returns a paginated view on all lists address is member of"""
+		try:
+			return [self._wrap_list(list) for list in self.client.find_lists(address, role, count, page)]
+		except urllib.error.HTTPError as e:
+			exceptions.map_http_404(e)
+			return []
 
 	def get_owner_and_memberships(self, address):
 		"""Returns a list of tuples in the form (MailingList, bool),

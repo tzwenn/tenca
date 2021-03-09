@@ -7,6 +7,9 @@ import urllib.error
 
 import mailmanclient
 
+def BASE_URL():
+	return "{}://{}:{}/{}/".format(settings.API_SCHEME, settings.API_HOST, settings.API_PORT, settings.API_VERSION)
+
 class Connection(object):
 
 	"""A decorator for mailmanclient.Client"""
@@ -20,7 +23,7 @@ class Connection(object):
 		If hash_storage_cls is None, the class specified in
 		settings.HASH_STORAGE_CLASS will be used.
 		"""
-		self.client = mailmanclient.Client(self.BASE_URL, settings.ADMIN_USER, settings.ADMIN_PASS)
+		self.client = mailmanclient.Client(BASE_URL(), settings.ADMIN_USER, settings.ADMIN_PASS)
 		domains = self.client.domains
 		assert len(domains), 1
 		self.domain = domains[0]
@@ -30,7 +33,7 @@ class Connection(object):
 		self.hash_storage = hash_storage_cls(self)
 
 	def __repr__(self):
-		return '<{} on {} for {}>'.format(type(self).__name__, self.BASE_URL, str(self.domain))
+		return '<{} on {} for {}>'.format(type(self).__name__, BASE_URL(), str(self.domain))
 
 	def _wrap_list(self, list, skip_hash_id=False, hash_id=None):
 		if hash_id is None:
@@ -39,11 +42,6 @@ class Connection(object):
 			except NotInStorageError:
 				hash_id = None
 		return MailingList(self, list, hash_id)
-
-	@classmethod
-	@property
-	def BASE_URL(cls):
-		return "{}://{}:{}/{}/".format(settings.API_SCHEME, settings.API_HOST, settings.API_PORT, settings.API_VERSION)
 
 	def rest_call(self, path, data=None, method=None):
 		return self.client._connection.call(path, data, method)

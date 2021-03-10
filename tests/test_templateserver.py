@@ -1,5 +1,6 @@
 import tenca.settings
 import tenca.templates
+import tenca.templateserver
 
 import http
 import unittest
@@ -8,6 +9,7 @@ import urllib.parse
 import urllib.request
 
 class TemplateRequestTest(unittest.TestCase):
+	"""Access via HTTP as given in `settings.TEMPLATE_SERVER_ADDRESS`"""
 
 	def url(self, path):
 		return '{}/{}'.format(tenca.settings.TEMPLATE_SERVER_ADDRESS, path)
@@ -16,7 +18,7 @@ class TemplateRequestTest(unittest.TestCase):
 		fragments = urllib.parse.urlencode(kwargs)
 		if fragments:
 			fragments = '?' + fragments
-		return urllib.request.urlopen(self.url(path) + fragments)
+		urllib.request.urlopen(self.url(path) + fragments)
 
 	def read(self, url):
 		return urllib.request.urlopen(url).read().decode('utf-8')
@@ -66,3 +68,32 @@ class TemplateRequestTest(unittest.TestCase):
 				tenca.templates.substitute(template_name, **template_args),
 				self.read(tenca.templates.http_substitute_url(template_name, **template_args))
 			)
+
+class TemplateAppTest(TemplateRequestTest):
+	"""Access the WSGI-object"""
+
+	def setUp(self):
+		self.app = tenca.templateserver.TemplateServerApp()
+
+	def _start_response(self, status, headers):
+		self._code = int(status.split(maxsplit=1)[0])
+		self._headers = headers
+
+	def call(self, environ):
+		response = b''.join(self.app(environ, self._start_response))
+		if self._code != http.HTTPStatus.OK:
+			raise urllib.error.HTTPError(environ['PATH_INFO'], self._code, response, self._headers, None)
+		return response
+
+	def open(self, path, **kwargs):
+		self.call(dict(
+			PATH_INFO=path,
+			QUERY_STRING=urllib.parse.urlencode(kwargs)
+		))
+
+	def read(self, url):
+		splits = urllib.parse.urlsplit(url)
+		return self.call(dict(
+			PATH_INFO=splits.path,
+			QUERY_STRING=splits.query
+		)).decode('utf-8')

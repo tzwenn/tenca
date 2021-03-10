@@ -70,9 +70,14 @@ class MailingList(object):
 			if e.status == 409 and not _on_retry and settings.RETRY_CANCELS_PENDING_SUBSCRIPTION:
 				try:
 					token = next(t for t, e in self.pending_subscriptions().items() if e == email)
-				except StopIteration:
-					raise e
-				self.cancel_pending_subscription(token)
+				except StopIteration: # pragma: no cover
+					# This only happens in crazy race-conditions, if the request
+					# was accepted/canceled between with subscribe and lookup.
+					# If accepted, we expect again an error to notify.
+					# If canceled, the expected action is to correctly try again
+					pass
+				else:
+					self.cancel_pending_subscription(token)
 				return self.add_member(email, send_welcome_message, _on_retry=True)
 			else:
 				raise e
@@ -117,7 +122,6 @@ class MailingList(object):
 		you can set `settings.DISABLE_GOODBYE_MESSAGES` to True to enable
 		proper removal.
 		"""
-
 		if settings.DISABLE_GOODBYE_MESSAGES:
 			path = 'lists/{}/requests'.format(self.fqdn_listname)
 			get_params = {

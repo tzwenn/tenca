@@ -14,6 +14,11 @@ class TestConfirmation(ListTest):
 			self.testlist.pending_subscriptions()
 		)
 
+	def testHasSubscriptionTokenPreMM3_3_3(self):
+		# Test mailmanclient-based request fetch (for mailmancore<3.3.3)
+		with settings.TemporarySettingsChange(DISABLE_GOODBYE_MESSAGES=False):
+			self.testHasSubscriptionToken()
+
 	def testNonSilentAddition(self):
 		token = self.testlist.add_member(self.p2_name)
 		self.assertMembers([self.creator_name])
@@ -60,17 +65,16 @@ class TestConfirmation(ListTest):
 		self.testlist.add_member_silently(self.p2_name)
 		token = self.testlist.remove_member(self.p2_name)
 		self.assertMembers([self.creator_name, self.p2_name])
-		pending = self.testlist.pending_subscriptions()
 		## Assertion removed, as of MailmanCore<3.3.3 pending dict will be empty
 		# self.assertDictEqual(
-		#	pending,
+		#	self.testlist.pending_subscriptions(),
 		#	{token: self.p2_name}
 		#)
 
 		self.testlist.confirm_subscription(token)
 		self.assertMembers([self.creator_name])
 		self.assertDictEqual(
-			pending,
+			self.testlist.pending_subscriptions(),
 			{}
 		)
 

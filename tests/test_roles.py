@@ -55,3 +55,28 @@ class TestRoles(ListTest):
 	def testBlockingFailsOnNonmember(self):
 		with self.assertRaises(exceptions.NoMemberException):
 			self.testlist.set_blocked(self.nh_name, True)
+
+	def testRoster(self):
+		self.testlist.add_member_silently(self.p2_name)
+		self.testlist.add_member_silently(self.p3_name)
+		self.testlist.set_blocked(self.p2_name, True)
+
+		self.assertSortedListEqual(
+			list(self.testlist.get_roster()),
+			[
+				(self.creator_name, (True, False)),
+				(self.p2_name,      (False, True)),
+				(self.p3_name,      (False, False)),
+			]
+		)
+
+		self.testlist.set_blocked(self.p2_name, False)
+		self.testlist.promote_to_owner(self.p2_name)
+		self.assertSortedListEqual(
+			list(self.testlist.get_roster()),
+			[
+				(self.creator_name, (True, False)),
+				(self.p2_name,      (True, False)),
+				(self.p3_name,      (False, False)),
+			]
+		)

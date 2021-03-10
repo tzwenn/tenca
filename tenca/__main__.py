@@ -1,3 +1,3 @@
-from . import settings, connection # pragma: no cover
+from . import settings, connection
 
-conn = connection.Connection() # pragma: no cover
+conn = connection.Connection()

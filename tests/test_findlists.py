@@ -14,8 +14,11 @@ class TestFindLists(TencaTest):
 	def email(self, name):
 		return TencaTest.email(name)
 
-	def plainNames(self, lists):
-		return [list.fqdn_listname.split('@', 1)[0] for list in lists]
+	def plainName(self, list_fqdn_or_id, sep='@'):
+		return list_fqdn_or_id.split(sep, 1)[0]
+
+	def plainNames(self, lists, sep='@'):
+		return [self.plainName(list.fqdn_listname, sep) for list in lists]
 
 	def findLists(self, name, role):
 		return self.plainNames(self.conn.find_lists(self.email(name), role))
@@ -71,6 +74,19 @@ class TestFindLists(TencaTest):
 			self.clear_testlist('does_not_exists', silent_fail=False, retain_hash=True)
 		with self.assertRaises(exceptions.TencaException):
 			self.clear_testlist('does_not_exists', silent_fail=False, retain_hash=False)
+
+	def testGetCreatorDashboard(self):
+		oam = self.conn.get_owner_and_memberships(self.email('thecreator'))
+		self.assertSortedListEqual(
+			self.test_data.keys(),
+			[self.plainName(list_id, sep='.') for list_id, _hash_id, _is_owner in oam]
+		)
+		self.assertTrue(
+			all(is_owner for list_id, _hash_id, is_owner in oam if self.plainName(list_id) in ['list_a', 'list_b'])
+		)
+		self.assertFalse(
+			any(is_owner for list_id, _hash_id, is_owner in oam if self.plainName(list_id) == 'list_c')
+		)
 
 	def tearDown(self):
 		super().tearDown()

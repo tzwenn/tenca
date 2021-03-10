@@ -1,6 +1,6 @@
 import unittest
 
-from tenca import connection, settings
+from tenca import settings
 
 class FQDNTest(unittest.TestCase):
 
@@ -11,7 +11,8 @@ class FQDNTest(unittest.TestCase):
 	]
 
 	def setUp(self):
-		self.conn = connection.Connection()
+		from tenca.__main__ import conn
+		self.conn = conn
 	
 	def testFQDN(self):
 		test_data = {

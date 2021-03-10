@@ -7,6 +7,9 @@ class TestRoles(ListTest):
 	p3_name = ListTest.email('person3')
 	nh_name = ListTest.email('not_here')
 
+	def testFQDNInListInfo(self):
+		self.assertIn(self.testlist.fqdn_listname, repr(self.testlist))
+
 	def testSilentAddition(self):
 		self.assertFalse(self.testlist.is_member(self.p2_name))
 		self.assertFalse(self.testlist.is_member(self.p3_name))

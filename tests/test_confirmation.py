@@ -1,5 +1,6 @@
 from .list_test import ListTest
 
+from tenca import settings
 from tenca import exceptions
 
 class TestConfirmation(ListTest):
@@ -70,3 +71,24 @@ class TestConfirmation(ListTest):
 			pending,
 			{}
 		)
+
+	def testCancelOnReRequest(self):
+		old_setting = settings.RETRY_CANCELS_PENDING_SUBSCRIPTION
+		settings.RETRY_CANCELS_PENDING_SUBSCRIPTION = True
+		try:
+			token = self.testlist.add_member(self.p2_name)
+			self.assertMembers([self.creator_name])
+			self.assertDictEqual(
+				self.testlist.pending_subscriptions(),
+				{token: self.p2_name}
+			)
+			token2 = self.testlist.add_member(self.p2_name)
+			self.assertMembers([self.creator_name])
+			self.assertDictEqual(
+				self.testlist.pending_subscriptions(),
+				{token2: self.p2_name}
+			)
+			self.testlist.confirm_subscription(token2)
+			self.assertMembers([self.creator_name, self.p2_name])
+		finally:
+			settings.RETRY_CANCELS_PENDING_SUBSCRIPTION = old_setting

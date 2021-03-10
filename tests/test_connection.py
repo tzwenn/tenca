@@ -2,7 +2,7 @@ import unittest
 
 from tenca import settings
 
-class FQDNTest(unittest.TestCase):
+class ConnectionTest(unittest.TestCase):
 
 	base_data = [
 		'testlist1',

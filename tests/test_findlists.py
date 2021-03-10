@@ -88,6 +88,12 @@ class TestFindLists(TencaTest):
 			any(is_owner for list_id, _hash_id, is_owner in oam if self.plainName(list_id) == 'list_c')
 		)
 
+	def testRawFind(self):
+		self.assertListEqual(
+			self.conn._raw_find_lists(self.email('not_here'), 'member'),
+			[]
+		)
+
 	def tearDown(self):
 		super().tearDown()
 		for listname in self.test_data:

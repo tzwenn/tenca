@@ -1,9 +1,8 @@
-## Define these settings in your local_tenca_settings.py.py
+## Define these settings in your local_tenca_settings.py
 # ADMIN_USER =
 # ADMIN_PASS =
 
 # You can also overwrite any other settings
-
 API_HOST = 'localhost'
 API_PORT = 9001
 
@@ -62,10 +61,3 @@ BUILD_ACTION_ABUSE_LINK = 'tenca.pipelines.build_action_abuse_link'
 
 # Enable for mailman>=3.3.3 to allow silent removal of users from lists
 DISABLE_GOODBYE_MESSAGES = False
-
-try:
-	from local_tenca_settings import *
-except ImportError: # pragma: no cover
-	import sys
-	sys.stderr.write('Could not import your "local_tenca_settings.py" file.\n')
-	sys.stderr.write('Try setting your PYTHONPATH accordingly.\n')

@@ -1,8 +1,3 @@
-from . import settings
-from .connection import Connection
+from . import settings, connection # pragma: no cover
 
-testlist_name = 'testlist'
-creator_name = 'thecreator@' + settings.TEST_MAIL_DOMAIN
-p2_name = 'person2@' + settings.TEST_MAIL_DOMAIN
-
-conn = Connection()
+conn = connection.Connection() # pragma: no cover

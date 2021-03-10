@@ -58,12 +58,24 @@ class MailingList(object):
 		"""Subscribe an email address to a mailing list, with no verification or notification send"""
 		self.list.subscribe(email, pre_verified=True, pre_confirmed=True, send_welcome_message=False)
 
-	def add_member(self, email, send_welcome_message=False):
+	def add_member(self, email, send_welcome_message=False, _on_retry=False):
 		"""Subscribes a user and sends them a confirmation mail
 
 		Returns the authentication token for that subscription.
 		"""
-		return self.list.subscribe(email, send_welcome_message=send_welcome_message)["token"]
+		try:
+			return self.list.subscribe(email, send_welcome_message=send_welcome_message)["token"]
+		except urllib.error.HTTPError as e:
+			 # Already pending subscriptions are retried
+			if e.status == 409 and not _on_retry and settings.RETRY_CANCELS_PENDING_SUBSCRIPTION:
+				try:
+					token = next(t for t, e in self.pending_subscriptions().items() if e == email)
+				except StopIteration:
+					raise e
+				self.cancel_pending_subscription(token)
+				return self.add_member(email, send_welcome_message, _on_retry=True)
+			else:
+				raise e
 
 	def toggle_membership(self, email):
 		"""Adds member if not present and removes if already member.

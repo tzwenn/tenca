@@ -24,6 +24,9 @@ DISABLED_NON_MEMBER_ACTION = 'reject'
 # What happens to messages when moderated/blocked members post? ('discard'/'reject')
 BLOCKED_MEMBER_ACTION = 'reject'
 
+# Does a re-request with the same e-mail cancel the previous one?
+RETRY_CANCELS_PENDING_SUBSCRIPTION = True
+
 # Invite links are a hash of each mailing list name. This is the salt
 LIST_HASH_ID_SALT = 'ChangeMe'
 

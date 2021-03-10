@@ -56,12 +56,10 @@ class HashStorage(object, metaclass=ABCMeta):
 		
 		Raises `NotInStorageError`, if no such list exists
 		"""
-		pass # pragma: no cover
 
 	@abstractmethod
 	def store_list_id(self, hash_id: str, list_id: str):
 		"""Stores list_id by hash_id."""
-		pass # pragma: no cover
 
 	@abstractmethod 
 	def get_hash_id(self, list_id: str) -> str:
@@ -69,7 +67,6 @@ class HashStorage(object, metaclass=ABCMeta):
 		
 		Raises `NotInStorageError`, if no such list exists.
 		"""
-		pass # pragma: no cover
 
 	@abstractmethod
 	def delete_hash_id(self, hash_id: str):
@@ -80,12 +77,10 @@ class HashStorage(object, metaclass=ABCMeta):
 
 		If the hash_id is unknown, this function silently returns.
 		"""
-		pass # pragma: no cover
 
 	@abstractmethod
 	def hashes(self):
 		"""Returns an iterator over all known hashes"""
-		pass # pragma: no cover
 
 
 class VolatileDictHashStorage(HashStorage):

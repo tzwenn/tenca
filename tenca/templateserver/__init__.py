@@ -32,7 +32,9 @@ class WebApp(object, metaclass=ABCMeta):
 
 	@abstractmethod
 	def run(self, path, params):
-		pass # pragma: no cover
+		"""Re-implement in subclass:
+		
+		Handle HTTP GET on `path` with `query`"""
 
 
 class TemplateServerApp(WebApp):

@@ -25,10 +25,13 @@ DISABLED_NON_MEMBER_ACTION = 'reject'
 BLOCKED_MEMBER_ACTION = 'reject'
 
 # Invite links are a hash of each mailing list name. This is the salt
-LIST_HASH_ID_SALT = "ChangeMe"
+LIST_HASH_ID_SALT = 'ChangeMe'
+
+# If you do not want to have reproducible invite links, change this to True
+USE_RANDOM_LIST_HASH = False
 
 # Class to lookup hash_id->list_id mappings
-HASH_STORAGE_CLASS = "tenca.hash_storage.DictCachedDescriptionStorage"
+HASH_STORAGE_CLASS = 'tenca.hash_storage.DictCachedDescriptionStorage'
 
 # Emails in the unittests or __main__.py will end in this domain
 TEST_MAIL_DOMAIN = 'example.com'
@@ -53,6 +56,9 @@ BUILD_ACTION_LINK = 'tenca.pipelines.build_action_link'
 
 # The name of a python function called to create report links for wrongly created requests
 BUILD_ACTION_ABUSE_LINK = 'tenca.pipelines.build_action_abuse_link'
+
+# Enable for mailman>=3.3.3 to allow silent removal of users from lists
+DISABLE_GOODBYE_MESSAGES = False
 
 try:
 	from local_tenca_settings import *

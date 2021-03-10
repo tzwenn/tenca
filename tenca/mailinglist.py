@@ -2,6 +2,8 @@ from . import exceptions, pipelines, settings, templates
 
 import base64
 import hashlib
+import random
+import string
 import urllib.parse
 import urllib.error
 
@@ -18,8 +20,7 @@ class MailingList(object):
 		'advertised': False,
 		'default_member_action': 'accept',
 		'default_nonmember_action': 'accept',
-		# Note: Option not present for mailman < 3.3.3
-		'send_goodbye_message': False,
+		# send_goodbye_message: False (see __init__)
 	}
 
 	# Maps Mailman Template names to Tenca Template Names
@@ -35,6 +36,9 @@ class MailingList(object):
 		self.conn = connection
 		self.list = list
 		self.hash_id = hash_id
+		if settings.DISABLE_GOODBYE_MESSAGES:
+			# Note: Option not present for mailman < 3.3.3
+			self.SHARED_LIST_DEFAULT_SETTINGS['send_goodbye_message'] = False
 
 	def __repr__(self):
 		return "<{} '{}'>".format(type(self).__name__, str(self.fqdn_listname))
@@ -98,20 +102,23 @@ class MailingList(object):
 	def pending_subscriptions(self, request_type='subscription'):
 		"""As of mailman<3.3.3 no unsubscriptions are delivered via REST.
 		In case you updated core (but use an older version of mailmanclient),
-		the following might do:
-
-		path = 'lists/{}/requests'.format(self.fqdn_listname)
-		get_params = {
-			'token_owner': 'subscriber',
-			'request_type': request_type
-		}
-		response, answer = self.conn.rest_call('{}?{}'.format(path, urllib.parse.urlencode(get_params), None, 'GET'))
-		if 'entries' not in answer:
-			return {}
-		else:
-			return {r['token']: r['email'] for r in answer['entries']}
+		you can set `settings.DISABLE_GOODBYE_MESSAGES` to True to enable
+		proper removal.
 		"""
-		return {r['token']: r['email'] for r in self.list.get_requests(token_owner='subscriber')}
+
+		if settings.DISABLE_GOODBYE_MESSAGES:
+			path = 'lists/{}/requests'.format(self.fqdn_listname)
+			get_params = {
+				'token_owner': 'subscriber',
+				'request_type': request_type
+			}
+			response, answer = self.conn.rest_call('{}?{}'.format(path, urllib.parse.urlencode(get_params), None, 'GET'))
+			if 'entries' not in answer:
+				return {}
+			else:
+				return {r['token']: r['email'] for r in answer['entries']}
+		else:
+			return {r['token']: r['email'] for r in self.list.get_requests(token_owner='subscriber')}
 
 	def _wrap_subscription_exception(self, func, token):
 		try:
@@ -180,20 +187,19 @@ class MailingList(object):
 	def remove_member_silently(self, email):
 		"""Remove member with all roles, no confirmation required. Fails if last owner.
 
-		FIXME: Not really silent. See :func:`~tenca.malinglist.MailingList.remove_member`"""
-		return self.remove_member(email, pre_confirmed=None)
-
-	def remove_member(self, email, pre_confirmed=False):
-		"""Remove member with all roles. Fails if last owner.
-
 		Attention: As of mailman<3.3.3, the `send_goodbye_message` attribute of a list
 		is not exposed using the REST API. Thus, this function is never silent and
 		will always send a final notification when a member is successfully removed.
+
+		If you have updated core, set `settings.DISABLE_GOODBYE_MESSAGES` to true.
 		"""
+		return self.remove_member(email, pre_confirmed=None)
+
+	def remove_member(self, email, pre_confirmed=False):
+		"""Remove member with all roles. Fails if last owner."""
 		if self.list.is_owner(email):
 			self.demote_from_owner(email)
 		return self._patched_unsubscribe(email, pre_confirmed=pre_confirmed)
-
 
 	def _raw_get_roster(self, roster):
 		path = 'lists/{}/roster/{}'.format(self.list_id, roster)
@@ -204,7 +210,7 @@ class MailingList(object):
 			exceptions.map_http_404(e)
 			return []
 
-	def get_roster(self, owners_first=True):
+	def get_roster(self):
 		memberships = {
 			e['email']: (False, self._is_a_blocked_action(e.get('moderation_action'))) for e in self._raw_get_roster('member')
 		}
@@ -213,10 +219,9 @@ class MailingList(object):
 			# But the member-status is evaluated when receiving an email from this address.
 			email: (True, memberships[email][1]) for email in (e['email'] for e in self._raw_get_roster('owner'))
 		})
-		if owners_first:
-			return sorted(memberships.items(), key=lambda t: (not t[1][0], t[0])) # False < True
-		else:
-			return sorted(memberships.items())
+		# if you prefer all owners first (jumping in the view if changed)
+		# return sorted(memberships.items(), key=lambda t: (not t[1][0], t[0])) # False < True
+		return sorted(memberships.items())
 
 	def inject_message(self, sender_address, subject, message, other_headers=None):
 		other_headers = other_headers or {}
@@ -246,22 +251,20 @@ class MailingList(object):
 			   for non-persistent caches.
 
 		I actually like the second aspect, but if you don't or #1 worries you
-		too much, consider the following:
-
-			import random
-			import string
-			
+		too much, consider changing `settings.USE_RANDOM_LIST_HASH`	to True.
+		"""
+		if settings.USE_RANDOM_LIST_HASH:
 			LEN = 32
 			ALPHA_NUM = string.ascii_letters + string.digits
-			return "".join(random.choice(ALPHA_NUM) for _ in range(LEN))		
-		"""
-		BAD_B64_CHARS = '+/='
+			return "".join(random.choice(ALPHA_NUM) for _ in range(LEN))
+		else:
+			BAD_B64_CHARS = '+/='
 
-		components = (settings.LIST_HASH_ID_SALT, round, self.list_id)
-		hashobj = hashlib.sha256()
-		hashobj.update('$'.join(map(str, components)).encode('ascii'))
-		b64 = base64.b64encode(hashobj.digest()).decode('ascii')
-		return b64.translate({ord(c): None for c in BAD_B64_CHARS})
+			components = (settings.LIST_HASH_ID_SALT, round, self.list_id)
+			hashobj = hashlib.sha256()
+			hashobj.update('$'.join(map(str, components)).encode('ascii'))
+			b64 = base64.b64encode(hashobj.digest()).decode('ascii')
+			return b64.translate({ord(c): None for c in BAD_B64_CHARS})
 
 	############################################################################
 	## Options

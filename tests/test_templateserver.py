@@ -23,14 +23,6 @@ class TemplateRequestTest(unittest.TestCase):
 	def read(self, url):
 		return urllib.request.urlopen(url).read().decode('utf-8')
 
-	def testNonExistentTemplateGives404(self):
-		with self.assertRaises(urllib.error.HTTPError):
-			self.open('no_such_template')
-		try:
-			self.open('no_such_template')
-		except urllib.error.HTTPError as e:
-			self.assertEqual(e.code, http.HTTPStatus.NOT_FOUND.value)
-
 	def testNonExistentTemplate(self):
 		with self.assertRaises(KeyError):
 			tenca.templates.substitute('no_such_template')
@@ -45,9 +37,9 @@ class TemplateRequestTest(unittest.TestCase):
 
 	def testMissingArgumentGives400(self, **kwargs):
 		with self.assertRaises(urllib.error.HTTPError):
-			self.open('mail_footer')
+			self.open('mail_footer', **kwargs)
 		try:
-			self.open('mail_footer')
+			self.open('mail_footer', **kwargs)
 		except urllib.error.HTTPError as e:
 			self.assertEqual(e.code, http.HTTPStatus.BAD_REQUEST.value)
 

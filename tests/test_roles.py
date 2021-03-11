@@ -45,6 +45,7 @@ class TestRoles(ListTest):
 			self.testlist.demote_from_owner(self.p3_name)
 
 	def testBlocking(self):
+		# Missing: Access e-mails to check effects
 		self.testlist.add_member_silently(self.p2_name)
 		self.assertFalse(self.testlist.is_blocked(self.p2_name))
 		self.testlist.set_blocked(self.p2_name, True)
@@ -79,4 +80,12 @@ class TestRoles(ListTest):
 				(self.p2_name,      (True, False)),
 				(self.p3_name,      (False, False)),
 			]
+		)
+
+	def testRosterOnDeletedListCaught(self):
+		self.testlist.add_member_silently(self.p2_name)
+		self.clear_testlist(self.testlist_name)
+		self.assertListEqual(
+			self.testlist._raw_get_roster('member'),
+			[]
 		)

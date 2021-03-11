@@ -1,6 +1,6 @@
 import unittest
 
-from tenca import settings
+from tenca import exceptions, settings
 
 class ConnectionTest(unittest.TestCase):
 
@@ -30,3 +30,7 @@ class ConnectionTest(unittest.TestCase):
 		self.assertIn(str(settings.API_PORT), info)
 		self.assertIn(settings.API_VERSION, info)
 		self.assertIn(settings.TEST_MAIL_DOMAIN, info)
+
+	def testAddressVerificationFailsOnNonUser(self):
+		with self.assertRaises(exceptions.NoMemberException):
+			self.conn.mark_address_verified('non-existent-person@not-this-domain.xyz')

@@ -23,3 +23,17 @@ class TestSettingsChanger(unittest.TestCase):
 			self.assertEqual(settings.API_VERSION, new_version)
 		self.assertEqual(settings.API_PORT, old_port)
 		self.assertEqual(settings.API_VERSION, old_version)
+
+	def testModuleLoad(self):
+		from tenca import settings
+		from . import data_test_settings
+		settings.load_from_module(data_test_settings)
+		
+		self.assertFalse(hasattr(settings, 'NOT_APPLIED_OPTION'))
+		self.assertFalse(hasattr(settings, 'DIFFERENT_PREFIXAPPLIEDOPTION'))
+		self.assertTrue(hasattr(settings, 'APPLIED_OPTION'))
+		self.assertEqual(settings.APPLIED_OPTION, 'Placeholder')
+
+		settings.load_from_module(data_test_settings, prefix='DIFFERENT_PREFIX')
+		self.assertTrue(hasattr(settings, 'APPLIEDOPTION'))
+		self.assertEqual(settings.APPLIEDOPTION, 'Placeholder')

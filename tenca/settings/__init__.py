@@ -30,6 +30,6 @@ def warn_on_missing_local_settings():
 
 
 def load_from_module(module, prefix='TENCA_'):
-	relevant_settings = ((name.lstrip(prefix), name) for name in dir(module) if name.startswith(prefix))
+	relevant_settings = ((name.split(prefix, 1)[1], name) for name in dir(module) if name.startswith(prefix))
 	for tenca_name, remote_name in relevant_settings:
 		globals()[tenca_name] = getattr(module, remote_name)

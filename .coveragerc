@@ -3,6 +3,7 @@ source =
 	tenca
 omit =
 	tenca/templateserver/__main__.py
+	tenca/tests/__main__.py
 command_line =
 	-m unittest
 

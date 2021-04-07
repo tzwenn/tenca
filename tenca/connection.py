@@ -115,17 +115,18 @@ class Connection(object):
 		except urllib.error.HTTPError as e:
 			exceptions.map_http_404(e, None if silent_fail else exceptions.TencaException)
 
-	def _raw_find_lists(self, address, role):
-		data = {'subscriber': address, 'role': role}
-		try:
-			response, content = self.rest_call('lists/find', data)
-			if 'entries' not in content:
-				return []
-		except urllib.error.HTTPError as e:
-			exceptions.map_http_404(e)
-			return []
-		else:
-			return [entry['list_id'] for entry in content['entries']]
+	def _raw_find_lists(self, addresses, role):
+		for address in addresses:
+			data = {'subscriber': address, 'role': role}
+			try:
+				response, content = self.rest_call('lists/find', data)
+				if 'entries' not in content:
+					yield []
+			except urllib.error.HTTPError as e:
+				exceptions.map_http_404(e)
+				yield []
+			else:
+				yield [entry['list_id'] for entry in content['entries']]
 
 	def find_lists(self, address, role=None, count=50, page=1):
 		"""Returns a paginated view on all lists address is member of"""
@@ -135,7 +136,7 @@ class Connection(object):
 			exceptions.map_http_404(e)
 			return []
 
-	def get_owner_and_memberships(self, address):
+	def get_owner_and_memberships(self, *addresses):
 		"""Returns a list of tuples in the form (MailingList, bool),
 		for all lists address is a member of, with the second argument being tur,
 		if that member is also an owner of the MailingList.
@@ -143,10 +144,10 @@ class Connection(object):
 		The resulted is sorted alphabetically, with the owned lists first.
 		"""
 		memberships = {
-			list_id: False for list_id in self._raw_find_lists(address, 'member')
+			list_id: False for list_id in itertools.chain(*self._raw_find_lists(addresses, 'member'))
 		}
 		memberships.update({
-			list_id: True for list_id in self._raw_find_lists(address, 'owner')
+			list_id: True for list_id in itertools.chain(*self._raw_find_lists(addresses, 'owner'))
 		})
 		sorted_mo_ships = sorted(memberships.items(), key=lambda t: (not t[1], t[0])) # False < True
 		return [(list_id, self.hash_storage.get_hash_id(list_id), is_owner) for (list_id, is_owner) in sorted_mo_ships]

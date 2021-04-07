@@ -1,3 +1,5 @@
+import itertools
+
 from tenca import exceptions
 
 from .tenca_test import TencaTest
@@ -47,7 +49,7 @@ class TestFindLists(TencaTest):
 
 	def testPerson3IsSomeMemberButNoOwner(self):
 		self.assertGreaterEqual(
-			len(self.findLists('person3', 'member')), 
+			len(self.findLists('person3', 'member')),
 			1)
 		self.assertFindLists('person3', 'owner', [])
 
@@ -90,7 +92,7 @@ class TestFindLists(TencaTest):
 
 	def testRawFind(self):
 		self.assertListEqual(
-			self.conn._raw_find_lists(self.email('not_here'), 'member'),
+			list(itertools.chain(*self.conn._raw_find_lists([self.email('not_here')], 'member'))),
 			[]
 		)
 

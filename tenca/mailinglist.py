@@ -233,7 +233,7 @@ class MailingList(object):
 		memberships.update({
 			# We cannot trust the 'moderation_action' field of owners.
 			# But the member-status is evaluated when receiving an email from this address.
-			email: (True, memberships[email][1]) for email in (e['email'] for e in self._raw_get_roster('owner'))
+			email: (True, memberships[email][1]) for email in (e['email'] for e in self._raw_get_roster('owner')) if email in memberships
 		})
 		# if you prefer all owners first (jumping in the view if changed)
 		# return sorted(memberships.items(), key=lambda t: (not t[1][0], t[0])) # False < True

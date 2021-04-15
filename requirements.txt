@@ -1,1 +1,1 @@
-mailmanclient
+mailmanclient>=3.3.2

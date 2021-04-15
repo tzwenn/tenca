@@ -55,7 +55,7 @@ class TemplateServerApp(WebApp):
 
 	def run(self, path, query):
 		try:
-			template = templates_dict[path.lstrip('/')]
+			template = templates_dict[path.rstrip('/').rsplit('/', 1)[-1]]
 		except KeyError:
 			return http.HTTPStatus.NOT_FOUND
 		try:

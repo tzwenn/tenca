@@ -20,6 +20,7 @@ class MailingList(object):
 		'advertised': False,
 		'default_member_action': 'accept',
 		'default_nonmember_action': 'accept',
+		'send_welcome_message': False,
 		# send_goodbye_message: False (see __init__)
 	}
 

@@ -14,9 +14,6 @@ LIST_DEFAULT_SETTINGS = {
 	# 'key': value
 }
 
-# If not None, this will override the listname-owner@lists.example.com
-DEFAULT_OWNER_ADDRESS = None
-
 # What happens to messages when non-members post while this is not enabled? ('discard'/'reject')
 DISABLED_NON_MEMBER_ACTION = 'reject'
 

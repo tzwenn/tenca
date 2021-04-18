@@ -32,6 +32,32 @@ class TestRoles(ListTest):
 		self.testlist.replies_addressed_to_list = True
 		self.assertTrue(self.testlist.replies_addressed_to_list)
 
+
+class TestHashsAndInjection(ListTest):
+
+	def testUpdatingInviteLink(self):
+		old_hash_id = self.testlist.hash_id
+		new_hash_id = 'AnotherLinkToClick'
+
+		def get_template(name):
+			for t in self.testlist.list.templates:
+				if t.name == name:
+					return t.uri
+
+		footer_link = get_template('list:member:regular:footer')
+		self.assertIn(old_hash_id, footer_link)
+		self.assertNotIn(new_hash_id, footer_link)
+
+		self.conn.hash_storage.store_list_id(
+			new_hash_id,
+			self.testlist.list_id
+		)
+		self.conn.flush_hash(new_hash_id)
+
+		footer_link = get_template('list:member:regular:footer')
+		self.assertIn(new_hash_id, footer_link)
+		self.assertNotIn(old_hash_id, footer_link)
+
 	def testHashProposalStable(self):
 		with settings.TemporarySettingsChange(USE_RANDOM_LIST_HASH=False):
 			previous_hashes = []

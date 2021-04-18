@@ -91,6 +91,18 @@ class Connection(object):
 
 		return wrapped_list
 
+	def flush_hash(self, hash_id):
+		"""Call this function, when you manually changed a list's hash_id in your UI.
+
+		This will cause two actions:
+			* In a multi-level cache write the hash to all storages
+			* Issue a reload of the list's text templates
+		"""
+		self.hash_storage.flush(hash_id)
+		mailing_list = self.get_list_by_hash_id(hash_id)
+		if mailing_list:
+			mailing_list.configure_templates()
+
 	def import_eemaill(self, name, hash_id):
 		"""Adds a list and directly assigns an hash_id (good for imports)"""
 		return self._create_list(name, creator_email=None, hash_id=hash_id)

@@ -31,13 +31,13 @@ class HashStorage(object, metaclass=ABCMeta):
 
 	def get_list(self, hash_id: str) -> mailmanclient.MailingList:
 		"""Returns a mailmanclient.MailingList object for hash_id
-		
+
 		Only re-implement in rare cases, use tenca.Connection.get_list instead
 		to receive a properly wrapped tenca.MailingList object.
 		"""
 		list_id = self.get_list_id(hash_id)
 		return self._raw_conn_getlist(list_id)
-	
+
 	def store_list(self, hash_id: str, list: mailmanclient.MailingList):
 		"""Saves the hash_id for this mailmanclient.MailingList object"""
 		self.store_list_id(hash_id, list.list_id)
@@ -53,7 +53,7 @@ class HashStorage(object, metaclass=ABCMeta):
 	@abstractmethod
 	def get_list_id(self, hash_id: str) -> str:
 		"""Returns a list id by `hash_id`.
-		
+
 		Raises `NotInStorageError`, if no such list exists
 		"""
 
@@ -61,10 +61,10 @@ class HashStorage(object, metaclass=ABCMeta):
 	def store_list_id(self, hash_id: str, list_id: str):
 		"""Stores list_id by hash_id."""
 
-	@abstractmethod 
+	@abstractmethod
 	def get_hash_id(self, list_id: str) -> str:
 		"""Reverse operation of `get_list_id`.
-		
+
 		Raises `NotInStorageError`, if no such list exists.
 		"""
 
@@ -82,10 +82,12 @@ class HashStorage(object, metaclass=ABCMeta):
 	def hashes(self):
 		"""Returns an iterator over all known hashes"""
 
+	def flush(self, hash_id):
+		"""Makes sure, the hash_id is written to storage"""
 
 class VolatileDictHashStorage(HashStorage):
 	"""Non-persistent hash_id -> list_id storage in a dictionary.
-	
+
 	Forgotten as soon, as the program ends. Finds no lists created
 	before. Only suitable for testing.
 	"""
@@ -138,7 +140,7 @@ class MailmanDescriptionHashStorage(HashStorage):
 
 	def _get_dsc(self, list):
 		return list.settings['description']
-	
+
 	def _set_dsc(self, list, dsc):
 		list.settings['description'] = dsc
 		list.settings.save()
@@ -211,7 +213,7 @@ class TwoLevelHashStorage(HashStorage):
 
 	def store_list_id(self, hash_id, list_id):
 		"""Stores list_id by hash_id in both storages.
-		
+
 		Attention: This is no atomic transaction!
 		"""
 		# First store l2, so that subset-relation is more likely to be kept
@@ -236,6 +238,15 @@ class TwoLevelHashStorage(HashStorage):
 			result.union(set(self.l1.hashes()))
 
 		return iter(result)
+
+	def flush(self, hash_id):
+		try:
+			list_id = self.l1.get_list_id(hash_id)
+		except NotInStorageError:
+			pass
+		else:
+			self.l2.store_list_id(hash_id, list_id)
+
 
 class BackedHashStorage(TwoLevelHashStorage):
 	"""A Hash Storage that *completely* reads a second
@@ -265,4 +276,3 @@ class DictCachedDescriptionStorage(TwoLevelHashStorage):
 
 	l1_class = VolatileDictHashStorage
 	l2_class = MailmanDescriptionHashStorage
- 

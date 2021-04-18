@@ -14,7 +14,7 @@ class DisabledHashStorage(HashStorage):
 
 	def list_hash(self, list):
 		return None
-	
+
 	def __contains__(self, hash_id):
 		return False
 
@@ -99,7 +99,7 @@ class HiddenFromTestRunner(object):
 				self.hash_storage.get_list('Invalid_Hash')
 			with self.assertRaises(NotInStorageError):
 				self.hash_storage._raw_conn_getlist('Invalid_ListName')
-			
+
 		def testRealGetList(self):
 			test_list_id, test_hash_id = self.get_list_test_data
 			self.hash_storage.store_list_id(test_hash_id, test_list_id)
@@ -212,11 +212,11 @@ class DictCachedDescriptionStorageTest(MailmanDescriptionHashStorageTest):
 		# Test that the data is now in dict L1
 		for hash_id in self.test_data.values():
 			self.assertIn(hash_id, self.hash_storage.l1)
-	
+
 	def testHashListOfL2(self):
 		self.storeAndClearL1()
 		self.testHashList(False)
-		
+
 	def testContainsInL2(self):
 		self.storeAndClearL1()
 		self.testContains(False)
@@ -224,6 +224,25 @@ class DictCachedDescriptionStorageTest(MailmanDescriptionHashStorageTest):
 	def testHashDeletionFromL2(self):
 		self.storeAndClearL1()
 		self.testHashDeletion(False)
+
+	def testFlush(self):
+		self.storeTestData()
+		new_list_a_hash = 'ANewlyOverwrittenHash'
+		list_a_id = TencaTest.list_id('list_a')
+
+		self.hash_storage.l1.store_list_id(
+			new_list_a_hash,
+			list_a_id,
+		)
+		self.assertNotEqual(
+			new_list_a_hash,
+			self.hash_storage.l2.get_hash_id(list_a_id)
+		)
+		self.hash_storage.flush(new_list_a_hash)
+		self.assertEqual(
+			new_list_a_hash,
+			self.hash_storage.l2.get_hash_id(list_a_id)
+		)
 
 	def testSilentDeletionAndStorage(self):
 		# Breaks LSP again, as dict retains values

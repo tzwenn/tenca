@@ -148,7 +148,7 @@ class Connection(object):
 			exceptions.map_http_404(e)
 			return []
 
-	def get_owner_and_memberships(self, *addresses):
+	def get_owner_and_memberships(self, *addresses, ignore_missing_hashes=False):
 		"""Returns a list of tuples in the form (MailingList, bool),
 		for all lists address is a member of, with the second argument being tur,
 		if that member is also an owner of the MailingList.
@@ -162,7 +162,14 @@ class Connection(object):
 			list_id: True for list_id in itertools.chain(*self._raw_find_lists(addresses, 'owner'))
 		})
 		sorted_mo_ships = sorted(memberships.items(), key=lambda t: (not t[1], t[0])) # False < True
-		return [(list_id, self.hash_storage.get_hash_id(list_id), is_owner) for (list_id, is_owner) in sorted_mo_ships]
+		result = []
+		for (list_id, is_owner) in sorted_mo_ships:
+			try:
+				result.append((list_id, self.hash_storage.get_hash_id(list_id), is_owner))
+			except NotInStorageError as e:
+				if not ignore_missing_hashes:
+					raise e
+		return result
 
 	def mark_address_verified(self, address):
 		try:

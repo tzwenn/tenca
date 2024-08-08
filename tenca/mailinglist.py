@@ -33,6 +33,8 @@ class MailingList(object):
 		'list:user:notice:rejected': 'rejected_message',
 	}
 
+	FOOTER_TEMPLATE_NAME = 'list:member:regular:footer'
+
 	def __init__(self, connection, list, hash_id):
 		self.conn = connection
 		self.list = list
@@ -105,6 +107,10 @@ class MailingList(object):
 		self.list.settings.save()
 
 	def configure_templates(self):
+		for mailman_template_name, tenca_template_name in self.TEMPLATE_MAPPINGS.items():
+			self.configure_single_template(mailman_template_name, tenca_template_name)
+
+	def configure_single_template(self, mailman_template_name, tenca_template_name):
 		template_args = dict(
 			fqdn_listname=self.fqdn_listname,
 			action_link=pipelines.call_func(settings.BUILD_ACTION_LINK, self, '$token'),
@@ -112,10 +118,9 @@ class MailingList(object):
 			invite_link=pipelines.call_func(settings.BUILD_INVITE_LINK, self),
 			web_ui='{}://{}'.format(settings.WEB_UI_SCHEME, settings.WEB_UI_HOSTNAME)
 		)
-		for mailman_template_name, tenca_template_name in self.TEMPLATE_MAPPINGS.items():
-			self.list.set_template(mailman_template_name, templates.http_substitute_url(
-				tenca_template_name, **template_args
-			))
+		self.list.set_template(mailman_template_name, templates.http_substitute_url(
+			tenca_template_name, **template_args
+		))
 
 	def pending_subscriptions(self, request_type='subscription'):
 		"""As of mailman<3.3.3 no unsubscriptions are delivered via REST.
@@ -315,6 +320,24 @@ class MailingList(object):
 		else:
 			self.list.settings['reply_goes_to_list'] = 'no_munging'
 		self.list.settings.save()
+
+	@property
+	def footer_has_subscribe_link(self):
+		footer_template = next(
+			(t for t in self.list.templates if t.name == self.FOOTER_TEMPLATE_NAME),
+			None,
+		)
+		return footer_template and footer_template.uri != 'None'
+
+	@footer_has_subscribe_link.setter
+	def footer_has_subscribe_link(self, has_link):
+		if has_link:
+			self.configure_single_template(
+				self.FOOTER_TEMPLATE_NAME,
+				self.TEMPLATE_MAPPINGS[self.FOOTER_TEMPLATE_NAME],
+			)
+		else:
+			self.list.set_template(self.FOOTER_TEMPLATE_NAME, None)
 
 	############################################################################
 
